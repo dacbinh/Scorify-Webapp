@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, Edit3, CheckCircle2, XCircle } from "lucide-react";
-import { AdminTeacher, getAdminTeachers, saveAdminTeachers, ensureAdminData, SubscriptionType } from "../utils/admin";
+import {
+  AdminTeacher,
+  getAdminTeachers,
+  saveAdminTeachers,
+  ensureAdminData,
+  SubscriptionType,
+} from "../utils/admin";
 
 const subscriptionOptions: { value: SubscriptionType; label: string }[] = [
   { value: "free", label: "Miễn phí" },
@@ -30,7 +36,10 @@ export function AdminTeachersPage() {
     setTeachers(getAdminTeachers());
   }, []);
 
-  const selectedTeacher = useMemo(() => teachers.find((t) => t.id === selectedId) ?? null, [teachers, selectedId]);
+  const selectedTeacher = useMemo(
+    () => teachers.find((t) => t.id === selectedId) ?? null,
+    [teachers, selectedId],
+  );
 
   const saveTeachers = (next: AdminTeacher[]) => {
     saveAdminTeachers(next);
@@ -55,7 +64,9 @@ export function AdminTeachersPage() {
   };
 
   const handleSave = () => {
-    const next = selectedId ? teachers.map((t) => (t.id === selectedId ? form : t)) : [...teachers, form];
+    const next = selectedId
+      ? teachers.map((t) => (t.id === selectedId ? form : t))
+      : [...teachers, form];
     saveTeachers(next);
     setSelectedId(form.id);
     setEditing(false);
@@ -82,8 +93,12 @@ export function AdminTeachersPage() {
     <div>
       <header className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quản lý giáo viên</h1>
-          <p className="text-gray-600">Tại đây bạn có thể tạo, sửa, xóa và xem thông tin giáo viên.</p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Quản lý giáo viên
+          </h1>
+          <p className="text-gray-600">
+            Tại đây bạn có thể tạo, sửa, xóa và xem thông tin giáo viên.
+          </p>
         </div>
         <button
           type="button"
@@ -100,22 +115,32 @@ export function AdminTeachersPage() {
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="text-sm text-gray-500">Tổng giáo viên</div>
-              <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats.total}
+              </div>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="text-sm text-gray-500">Bài đã chấm</div>
-              <div className="text-2xl font-bold text-gray-900">{stats.marked}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats.marked}
+              </div>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="text-sm text-gray-500">Bài chờ</div>
-              <div className="text-2xl font-bold text-gray-900">{stats.pending}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats.pending}
+              </div>
             </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Danh sách giáo viên</h2>
-              <span className="text-xs text-gray-500">Nhấp vào tên để xem chi tiết</span>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Danh sách giáo viên
+              </h2>
+              <span className="text-xs text-gray-500">
+                Nhấp vào tên để xem chi tiết
+              </span>
             </div>
             <div className="divide-y divide-gray-100">
               {teachers.map((teacher) => (
@@ -128,12 +153,20 @@ export function AdminTeachersPage() {
                   }`}
                 >
                   <div>
-                    <div className="font-semibold text-gray-900">{teacher.name || "(Chưa có tên)"}</div>
-                    <div className="text-xs text-gray-500">{teacher.email || "(Chưa có email)"}</div>
+                    <div className="font-semibold text-gray-900">
+                      {teacher.name || "(Chưa có tên)"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {teacher.email || "(Chưa có email)"}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                      {subscriptionOptions.find((o) => o.value === teacher.subscription)?.label}
+                      {
+                        subscriptionOptions.find(
+                          (o) => o.value === teacher.subscription,
+                        )?.label
+                      }
                     </span>
                     <Edit3 className="size-4 text-gray-400" />
                   </div>
@@ -151,11 +184,13 @@ export function AdminTeachersPage() {
         <section className="lg:col-span-1">
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Chi tiết giáo viên</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Chi tiết giáo viên
+              </h2>
               {selectedTeacher && (
                 <button
                   type="button"
-                  onClick={() => setEditing(true)}
+                  onClick={() => startEdit(selectedTeacher)}
                   className="inline-flex items-center gap-2 text-[#F05123] hover:text-[#D9471E]"
                 >
                   <Edit3 className="size-5" />
@@ -168,31 +203,45 @@ export function AdminTeachersPage() {
               <div className="space-y-3">
                 <div>
                   <div className="text-xs text-gray-500">Tên</div>
-                  <div className="text-sm font-medium text-gray-900">{selectedTeacher.name}</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {selectedTeacher.name}
+                  </div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500">Email</div>
-                  <div className="text-sm font-medium text-gray-900">{selectedTeacher.email}</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {selectedTeacher.email}
+                  </div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500">Gói đăng ký</div>
                   <div className="text-sm font-medium text-gray-900">
-                    {subscriptionOptions.find((o) => o.value === selectedTeacher.subscription)?.label}
+                    {
+                      subscriptionOptions.find(
+                        (o) => o.value === selectedTeacher.subscription,
+                      )?.label
+                    }
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-xs text-gray-500">Bài đã chấm</div>
-                    <div className="text-sm font-medium text-gray-900">{selectedTeacher.markedTests}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {selectedTeacher.markedTests}
+                    </div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500">Bài chờ</div>
-                    <div className="text-sm font-medium text-gray-900">{selectedTeacher.pendingTests}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {selectedTeacher.pendingTests}
+                    </div>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => selectedTeacher && handleDelete(selectedTeacher.id)}
+                  onClick={() =>
+                    selectedTeacher && handleDelete(selectedTeacher.id)
+                  }
                   className="mt-4 w-full inline-flex items-center justify-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg py-2"
                 >
                   <Trash2 className="size-5" />
@@ -210,8 +259,12 @@ export function AdminTeachersPage() {
             <div className="mt-6 bg-white border border-gray-200 rounded-xl shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{selectedId ? "Sửa giáo viên" : "Tạo giáo viên"}</h3>
-                  <p className="text-xs text-gray-500">Điền thông tin sau rồi lưu lại.</p>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {selectedId ? "Sửa giáo viên" : "Tạo giáo viên"}
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Điền thông tin sau rồi lưu lại.
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -224,7 +277,9 @@ export function AdminTeachersPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Họ và tên
+                  </label>
                   <input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -234,20 +289,31 @@ export function AdminTeachersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
                   <input
                     value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, email: e.target.value })
+                    }
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:ring-2 focus:ring-[#F05123] focus:border-transparent"
                     placeholder="teacher@example.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gói đăng ký</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Gói đăng ký
+                  </label>
                   <select
                     value={form.subscription}
-                    onChange={(e) => setForm({ ...form, subscription: e.target.value as SubscriptionType })}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        subscription: e.target.value as SubscriptionType,
+                      })
+                    }
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:ring-2 focus:ring-[#F05123] focus:border-transparent"
                   >
                     {subscriptionOptions.map((option) => (
@@ -260,23 +326,25 @@ export function AdminTeachersPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bài đã chấm</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">
+                      Bài đã chấm
+                    </label>
                     <input
                       type="number"
                       value={form.markedTests}
-                      min={0}
-                      onChange={(e) => setForm({ ...form, markedTests: Number(e.target.value) })}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:ring-2 focus:ring-[#F05123] focus:border-transparent"
+                      disabled
+                      className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-gray-500 cursor-not-allowed"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bài chờ</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">
+                      Bài chờ
+                    </label>
                     <input
                       type="number"
                       value={form.pendingTests}
-                      min={0}
-                      onChange={(e) => setForm({ ...form, pendingTests: Number(e.target.value) })}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:ring-2 focus:ring-[#F05123] focus:border-transparent"
+                      disabled
+                      className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-gray-500 cursor-not-allowed"
                     />
                   </div>
                 </div>

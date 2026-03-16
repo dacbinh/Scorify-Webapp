@@ -1,14 +1,39 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router";
-import { GraduationCap, BookOpen, Users, Plus, Settings, LogOut, Edit, Trash2, FileText, Clock, CheckCircle, AlertCircle, Sparkles, Calendar, Upload } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import {
+  GraduationCap,
+  BookOpen,
+  Users,
+  Plus,
+  Settings,
+  LogOut,
+  Edit,
+  Trash2,
+  FileText,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Sparkles,
+  Calendar,
+  Upload,
+  ChevronRight,
+} from "lucide-react";
 
 export function ClassDetailPage() {
   const { id } = useParams();
-  const [activeTab, setActiveTab] = useState<"exams" | "students" | "submissions">("exams");
+  const [activeTab, setActiveTab] = useState<
+    "exams" | "students" | "submissions"
+  >("exams");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; size: number; lastModified: number }>>([]);
-  const [pendingFiles, setPendingFiles] = useState<Array<{ name: string; size: number; lastModified: number }> | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<
+    Array<{ name: string; size: number; lastModified: number }>
+  >([]);
+  const [pendingFiles, setPendingFiles] = useState<Array<{
+    name: string;
+    size: number;
+    lastModified: number;
+  }> | null>(null);
   const [showConfirmUpload, setShowConfirmUpload] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -29,7 +54,9 @@ export function ClassDetailPage() {
     }
   }, [sessionKey]);
 
-  const saveUploads = (files: Array<{ name: string; size: number; lastModified: number }>) => {
+  const saveUploads = (
+    files: Array<{ name: string; size: number; lastModified: number }>,
+  ) => {
     sessionStorage.setItem(sessionKey, JSON.stringify(files));
     setUploadedFiles(files);
   };
@@ -51,7 +78,9 @@ export function ClassDetailPage() {
     saveUploads(next);
     setPendingFiles(null);
     setShowConfirmUpload(false);
-    setNotification("Tải lên thành công. Scorify sẽ giữ dữ liệu trong phiên này.");
+    setNotification(
+      "Tải lên thành công. Scorify sẽ giữ dữ liệu trong phiên này.",
+    );
     setTimeout(() => setNotification(null), 4000);
   };
 
@@ -66,18 +95,102 @@ export function ClassDetailPage() {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  // Mock data synchronized with classes-page.tsx
   const classes = [
-    { id: 1, name: "Toán 10A1", subject: "Toán", students: 42, exams: 6, createdDate: "2025-09-01", description: "Đại số, hình học và luyện tập tư duy giải toán theo chuyên đề" },
-    { id: 2, name: "Ngữ văn 10A1", subject: "Ngữ văn", students: 40, exams: 5, createdDate: "2025-09-03", description: "Đọc hiểu văn bản, nghị luận xã hội và nghị luận văn học" },
-    { id: 3, name: "Tiếng Anh 10A1", subject: "Tiếng Anh", students: 41, exams: 6, createdDate: "2025-09-05", description: "Phát triển 4 kỹ năng nghe, nói, đọc, viết và ngữ pháp nền tảng" },
-    { id: 4, name: "Vật lí 10A2", subject: "Vật lí", students: 38, exams: 5, createdDate: "2025-09-07", description: "Cơ học, nhiệt học và bài tập vận dụng thực tiễn" },
-    { id: 5, name: "Hóa học 10A2", subject: "Hóa học", students: 37, exams: 5, createdDate: "2025-09-09", description: "Cấu tạo chất, phản ứng hóa học và bài tập định lượng cơ bản" },
-    { id: 6, name: "Sinh học 10A2", subject: "Sinh học", students: 36, exams: 4, createdDate: "2025-09-11", description: "Tế bào học, vi sinh vật và các quá trình sinh học nền tảng" },
-    { id: 7, name: "Lịch sử 11A1", subject: "Lịch sử", students: 35, exams: 4, createdDate: "2025-09-13", description: "Lịch sử Việt Nam và thế giới giai đoạn cận đại - hiện đại" },
-    { id: 8, name: "Địa lí 11A1", subject: "Địa lí", students: 34, exams: 4, createdDate: "2025-09-15", description: "Địa lí tự nhiên, kinh tế - xã hội Việt Nam và kỹ năng Atlat" },
-    { id: 9, name: "Giáo dục công dân 12A1", subject: "GDCD", students: 39, exams: 3, createdDate: "2025-09-17", description: "Pháp luật, quyền và nghĩa vụ công dân, tình huống thực tế" },
-    { id: 10, name: "Tin học 12A1", subject: "Tin học", students: 33, exams: 4, createdDate: "2025-09-19", description: "Thuật toán, lập trình cơ bản và ứng dụng công nghệ thông tin" },
+    {
+      id: 1,
+      name: "Toán 10A1",
+      subject: "Toán",
+      students: 42,
+      exams: 6,
+      createdDate: "2025-09-01",
+      description:
+        "Đại số, hình học và luyện tập tư duy giải toán theo chuyên đề",
+    },
+    {
+      id: 2,
+      name: "Ngữ văn 10A1",
+      subject: "Ngữ văn",
+      students: 40,
+      exams: 5,
+      createdDate: "2025-09-03",
+      description: "Đọc hiểu văn bản, nghị luận xã hội và nghị luận văn học",
+    },
+    {
+      id: 3,
+      name: "Tiếng Anh 10A1",
+      subject: "Tiếng Anh",
+      students: 41,
+      exams: 6,
+      createdDate: "2025-09-05",
+      description:
+        "Phát triển 4 kỹ năng nghe, nói, đọc, viết và ngữ pháp nền tảng",
+    },
+    {
+      id: 4,
+      name: "Vật lí 10A2",
+      subject: "Vật lí",
+      students: 38,
+      exams: 5,
+      createdDate: "2025-09-07",
+      description: "Cơ học, nhiệt học và bài tập vận dụng thực tiễn",
+    },
+    {
+      id: 5,
+      name: "Hóa học 10A2",
+      subject: "Hóa học",
+      students: 37,
+      exams: 5,
+      createdDate: "2025-09-09",
+      description:
+        "Cấu tạo chất, phản ứng hóa học và bài tập định lượng cơ bản",
+    },
+    {
+      id: 6,
+      name: "Sinh học 10A2",
+      subject: "Sinh học",
+      students: 36,
+      exams: 4,
+      createdDate: "2025-09-11",
+      description: "Tế bào học, vi sinh vật và các quá trình sinh học nền tảng",
+    },
+    {
+      id: 7,
+      name: "Lịch sử 11A1",
+      subject: "Lịch sử",
+      students: 35,
+      exams: 4,
+      createdDate: "2025-09-13",
+      description: "Lịch sử Việt Nam và thế giới giai đoạn cận đại - hiện đại",
+    },
+    {
+      id: 8,
+      name: "Địa lí 11A1",
+      subject: "Địa lí",
+      students: 34,
+      exams: 4,
+      createdDate: "2025-09-15",
+      description:
+        "Địa lí tự nhiên, kinh tế - xã hội Việt Nam và kỹ năng Atlat",
+    },
+    {
+      id: 9,
+      name: "Giáo dục công dân 12A1",
+      subject: "GDCD",
+      students: 39,
+      exams: 3,
+      createdDate: "2025-09-17",
+      description: "Pháp luật, quyền và nghĩa vụ công dân, tình huống thực tế",
+    },
+    {
+      id: 10,
+      name: "Tin học 12A1",
+      subject: "Tin học",
+      students: 33,
+      exams: 4,
+      createdDate: "2025-09-19",
+      description:
+        "Thuật toán, lập trình cơ bản và ứng dụng công nghệ thông tin",
+    },
   ];
 
   const classId = Number(id);
@@ -95,22 +208,79 @@ export function ClassDetailPage() {
   };
 
   const examTitleBySubject: Record<string, string[]> = {
-    "Toán": ["Kiểm tra Đại số", "Kiểm tra Hình học", "Bài luyện tập hàm số", "Bài kiểm tra giữa kỳ", "Đề ôn tập cuối kỳ"],
-    "Ngữ văn": ["Bài nghị luận xã hội", "Phân tích tác phẩm", "Cảm nhận thơ", "Bài viết giữa kỳ", "Bài viết cuối kỳ"],
-    "Tiếng Anh": ["Reading Comprehension", "Grammar Test", "Writing Task", "Mid-term Test", "Final Practice"],
-    "Vật lí": ["Bài tập Cơ học", "Kiểm tra Nhiệt học", "Bài tập Điện học", "Kiểm tra giữa kỳ", "Đề tổng hợp"],
-    "Hóa học": ["Kiểm tra phản ứng hóa học", "Bài tập định lượng", "Bài tập dung dịch", "Kiểm tra giữa kỳ", "Đề tổng hợp cuối kỳ"],
-    "Sinh học": ["Kiểm tra tế bào học", "Bài tập di truyền", "Phân tích hệ sinh thái", "Đề ôn tập học kỳ"],
-    "Lịch sử": ["Kiểm tra lịch sử Việt Nam", "Bài phân tích sự kiện", "Kiểm tra giữa kỳ", "Đề tổng hợp học kỳ"],
-    "Địa lí": ["Kiểm tra Atlat", "Bài tập địa lí kinh tế", "Kiểm tra giữa kỳ", "Đề tổng hợp học kỳ"],
-    "GDCD": ["Tình huống pháp luật", "Kiểm tra quyền công dân", "Bài kiểm tra học kỳ"],
-    "Tin học": ["Bài tập thuật toán", "Kiểm tra lập trình", "Bài thực hành dữ liệu", "Đề ôn tập học kỳ"],
+    Toán: [
+      "Kiểm tra Đại số",
+      "Kiểm tra Hình học",
+      "Bài luyện tập hàm số",
+      "Bài kiểm tra giữa kỳ",
+      "Đề ôn tập cuối kỳ",
+    ],
+    "Ngữ văn": [
+      "Bài nghị luận xã hội",
+      "Phân tích tác phẩm",
+      "Cảm nhận thơ",
+      "Bài viết giữa kỳ",
+      "Bài viết cuối kỳ",
+    ],
+    "Tiếng Anh": [
+      "Reading Comprehension",
+      "Grammar Test",
+      "Writing Task",
+      "Mid-term Test",
+      "Final Practice",
+    ],
+    "Vật lí": [
+      "Bài tập Cơ học",
+      "Kiểm tra Nhiệt học",
+      "Bài tập Điện học",
+      "Kiểm tra giữa kỳ",
+      "Đề tổng hợp",
+    ],
+    "Hóa học": [
+      "Kiểm tra phản ứng hóa học",
+      "Bài tập định lượng",
+      "Bài tập dung dịch",
+      "Kiểm tra giữa kỳ",
+      "Đề tổng hợp cuối kỳ",
+    ],
+    "Sinh học": [
+      "Kiểm tra tế bào học",
+      "Bài tập di truyền",
+      "Phân tích hệ sinh thái",
+      "Đề ôn tập học kỳ",
+    ],
+    "Lịch sử": [
+      "Kiểm tra lịch sử Việt Nam",
+      "Bài phân tích sự kiện",
+      "Kiểm tra giữa kỳ",
+      "Đề tổng hợp học kỳ",
+    ],
+    "Địa lí": [
+      "Kiểm tra Atlat",
+      "Bài tập địa lí kinh tế",
+      "Kiểm tra giữa kỳ",
+      "Đề tổng hợp học kỳ",
+    ],
+    GDCD: [
+      "Tình huống pháp luật",
+      "Kiểm tra quyền công dân",
+      "Bài kiểm tra học kỳ",
+    ],
+    "Tin học": [
+      "Bài tập thuật toán",
+      "Kiểm tra lập trình",
+      "Bài thực hành dữ liệu",
+      "Đề ôn tập học kỳ",
+    ],
   };
 
-  const titles = examTitleBySubject[classData.subject] ?? ["Bài kiểm tra chuyên đề"];
+  const titles = examTitleBySubject[classData.subject] ?? [
+    "Bài kiểm tra chuyên đề",
+  ];
   const exams = Array.from({ length: classData.examsCount }, (_, idx) => {
     const status = idx < 2 ? "active" : idx === 2 ? "draft" : "scheduled";
-    const submissions = status === "active" ? Math.max(classData.studentsCount - 4 + idx, 0) : 0;
+    const submissions =
+      status === "active" ? Math.max(classData.studentsCount - 4 + idx, 0) : 0;
     const graded = status === "active" ? Math.max(submissions - 8, 0) : 0;
     return {
       id: idx + 1,
@@ -123,9 +293,42 @@ export function ClassDetailPage() {
     };
   });
 
-  const firstNames = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Vũ", "Đặng", "Bùi", "Đỗ", "Võ"];
-  const middleNames = ["Minh", "Khánh", "Gia", "Quang", "Thu", "Hoài", "Anh", "Ngọc", "Thanh", "Hải"];
-  const lastNames = ["Anh", "Linh", "Nam", "Hân", "Huy", "Mai", "Trang", "Phúc", "Khang", "Vy"];
+  const firstNames = [
+    "Nguyễn",
+    "Trần",
+    "Lê",
+    "Phạm",
+    "Hoàng",
+    "Vũ",
+    "Đặng",
+    "Bùi",
+    "Đỗ",
+    "Võ",
+  ];
+  const middleNames = [
+    "Minh",
+    "Khánh",
+    "Gia",
+    "Quang",
+    "Thu",
+    "Hoài",
+    "Anh",
+    "Ngọc",
+    "Thanh",
+    "Hải",
+  ];
+  const lastNames = [
+    "Anh",
+    "Linh",
+    "Nam",
+    "Hân",
+    "Huy",
+    "Mai",
+    "Trang",
+    "Phúc",
+    "Khang",
+    "Vy",
+  ];
   const grades = ["9.8", "9.4", "9.0", "8.7", "8.4"];
 
   const students = Array.from({ length: classData.studentsCount }, (_, idx) => {
@@ -135,7 +338,10 @@ export function ClassDetailPage() {
       name: fullName,
       email: `hs${String(idx + 1).padStart(2, "0")}@school.edu.vn`,
       joined: "2025-09-01",
-      submissions: Math.min(exams.filter((e) => e.status !== "scheduled").length, 1 + (idx % Math.max(classData.examsCount, 1))),
+      submissions: Math.min(
+        exams.filter((e) => e.status !== "scheduled").length,
+        1 + (idx % Math.max(classData.examsCount, 1)),
+      ),
       avgGrade: grades[idx % grades.length],
     };
   });
@@ -157,27 +363,38 @@ export function ClassDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active": return "bg-green-100 text-green-700";
-      case "draft": return "bg-gray-100 text-gray-700";
-      case "scheduled": return "bg-blue-100 text-blue-700";
-      default: return "bg-gray-100 text-gray-700";
+      case "active":
+        return "bg-green-100 text-green-700";
+      case "draft":
+        return "bg-gray-100 text-gray-700";
+      case "scheduled":
+        return "bg-blue-100 text-blue-700";
+      default:
+        return "bg-gray-100 text-gray-700";
     }
   };
 
   const getSubmissionStatusColor = (status: string) => {
     switch (status) {
-      case "graded": return "bg-green-100 text-green-700";
-      case "pending": return "bg-orange-100 text-orange-700";
-      default: return "bg-gray-100 text-gray-700";
+      case "graded":
+        return "bg-green-100 text-green-700";
+      case "pending":
+        return "bg-orange-100 text-orange-700";
+      default:
+        return "bg-gray-100 text-gray-700";
     }
   };
 
   const getExamStatusLabel = (status: string) => {
     switch (status) {
-      case "active": return "Đang mở";
-      case "draft": return "Nháp";
-      case "scheduled": return "Đã lên lịch";
-      default: return status;
+      case "active":
+        return "Đang mở";
+      case "draft":
+        return "Nháp";
+      case "scheduled":
+        return "Đã lên lịch";
+      default:
+        return status;
     }
   };
 
@@ -192,7 +409,10 @@ export function ClassDetailPage() {
               <span className="font-semibold text-xl">Scorify</span>
             </Link>
             <div className="flex items-center gap-4">
-              <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">
+              <Link
+                to="/dashboard"
+                className="text-gray-600 hover:text-gray-900"
+              >
                 Bảng điều khiển
               </Link>
               <Link to="/classes" className="text-gray-600 hover:text-gray-900">
@@ -203,7 +423,9 @@ export function ClassDetailPage() {
               </button>
               <div className="flex items-center gap-3 border-l pl-4">
                 <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">Cô Nguyễn Thu Hà</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    Cô Nguyễn Thu Hà
+                  </div>
                   <div className="text-xs text-gray-500">Giáo viên</div>
                 </div>
                 <div className="size-10 bg-[#F05123] rounded-full flex items-center justify-center text-white font-medium">
@@ -231,7 +453,9 @@ export function ClassDetailPage() {
         {/* Breadcrumb */}
         <div className="mb-6">
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Link to="/classes" className="hover:text-[#F05123]">Lớp học</Link>
+            <Link to="/classes" className="hover:text-[#F05123]">
+              Lớp học
+            </Link>
             <span>/</span>
             <span className="text-gray-900">{classData.name}</span>
           </div>
@@ -246,24 +470,35 @@ export function ClassDetailPage() {
                   <BookOpen className="size-8 text-[#F05123]" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{classData.name}</h1>
-                  <p className="text-gray-600">{classData.subject} • Năm học {classData.academicYear}</p>
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {classData.name}
+                  </h1>
+                  <p className="text-gray-600">
+                    {classData.subject} • Năm học {classData.academicYear}
+                  </p>
                 </div>
               </div>
               <p className="text-gray-700 mb-6">{classData.description}</p>
-              
+
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                   <Users className="size-5 text-gray-400" />
-                  <span className="text-gray-900 font-medium">{classData.studentsCount} học sinh</span>
+                  <span className="text-gray-900 font-medium">
+                    {classData.studentsCount} học sinh
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <FileText className="size-5 text-gray-400" />
-                  <span className="text-gray-900 font-medium">{classData.examsCount} bài kiểm tra</span>
+                  <span className="text-gray-900 font-medium">
+                    {classData.examsCount} bài kiểm tra
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="size-5 text-gray-400" />
-                  <span className="text-gray-600">Tạo lúc {new Date(classData.createdDate).toLocaleDateString()}</span>
+                  <span className="text-gray-600">
+                    Tạo lúc{" "}
+                    {new Date(classData.createdDate).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
             </div>
@@ -279,7 +514,7 @@ export function ClassDetailPage() {
               <button className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 <Edit className="size-5 text-gray-600" />
               </button>
-              <button 
+              <button
                 onClick={() => setShowDeleteModal(true)}
                 className="px-4 py-3 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
               >
@@ -332,20 +567,28 @@ export function ClassDetailPage() {
             {activeTab === "exams" && (
               <div className="space-y-4">
                 {exams.map((exam) => (
-                  <div key={exam.id} className="p-6 rounded-lg border border-gray-200 hover:border-orange-300 hover:shadow-md transition-all">
+                  <div
+                    key={exam.id}
+                    className="p-6 rounded-lg border border-gray-200 hover:border-orange-300 hover:shadow-md transition-all"
+                  >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{exam.title}</h3>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(exam.status)}`}>
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {exam.title}
+                          </h3>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(exam.status)}`}
+                          >
                             {getExamStatusLabel(exam.status)}
                           </span>
                         </div>
-                        
+
                         <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
                           <span className="flex items-center gap-1">
                             <Calendar className="size-4" />
-                            Hạn nộp: {new Date(exam.dueDate).toLocaleDateString()}
+                            Hạn nộp:{" "}
+                            {new Date(exam.dueDate).toLocaleDateString()}
                           </span>
                           <span className="flex items-center gap-1">
                             <Upload className="size-4" />
@@ -359,25 +602,29 @@ export function ClassDetailPage() {
 
                         {/* Progress Bar */}
                         <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-                          <div 
+                          <div
                             className="bg-[#F05123] h-2 rounded-full transition-all"
-                            style={{ width: `${(exam.submissions / exam.total) * 100}%` }}
+                            style={{
+                              width: `${(exam.submissions / exam.total) * 100}%`,
+                            }}
                           />
                         </div>
                       </div>
 
                       <div className="flex gap-2 ml-6">
-                        {exam.status === "active" && exam.submissions > exam.graded && (
-                          <button className="bg-orange-100 text-[#B63A18] px-4 py-2 rounded-lg hover:bg-orange-200 transition-colors flex items-center gap-2 font-medium">
-                            <Sparkles className="size-4" />
-                            Chấm bằng AI
-                          </button>
-                        )}
+                        {exam.status === "active" &&
+                          exam.submissions > exam.graded && (
+                            <button className="bg-orange-100 text-[#B63A18] px-4 py-2 rounded-lg hover:bg-orange-200 transition-colors flex items-center gap-2 font-medium">
+                              <Sparkles className="size-4" />
+                              Chấm bằng AI
+                            </button>
+                          )}
                         <Link
-                          to={`/classes/${id}/essay/${exam.id}/submission-1`}
-                          className="bg-[#F05123] text-white px-4 py-2 rounded-lg hover:bg-[#D9471E] transition-colors"
+                          to={`/classes/${id}/essay/${exam.id}`} // Remove the "/submission-1" part
+                          className="flex items-center gap-2 text-[#F05123] hover:text-[#D9471E] font-medium"
                         >
-                          Xem chi tiết
+                          <span>Xem chi tiết</span>
+                          <ChevronRight className="size-4" />
                         </Link>
                       </div>
                     </div>
@@ -392,9 +639,12 @@ export function ClassDetailPage() {
                 <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Tải lên ảnh bài kiểm tra</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Tải lên ảnh bài kiểm tra
+                      </h3>
                       <p className="text-sm text-gray-600">
-                        Chọn thư mục/tệp chứa ảnh bài kiểm tra của học sinh. Sau khi chọn, bạn sẽ được yêu cầu xác nhận.
+                        Chọn thư mục/tệp chứa ảnh bài kiểm tra của học sinh. Sau
+                        khi chọn, bạn sẽ được yêu cầu xác nhận.
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -427,12 +677,19 @@ export function ClassDetailPage() {
 
                   {uploadedFiles.length > 0 && (
                     <div className="mt-6">
-                      <div className="text-sm text-gray-600 mb-2">Tệp đã tải lên trong phiên này:</div>
+                      <div className="text-sm text-gray-600 mb-2">
+                        Tệp đã tải lên trong phiên này:
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {uploadedFiles.map((file, idx) => (
-                          <div key={`${file.name}-${file.lastModified}-${idx}`} className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
+                          <div
+                            key={`${file.name}-${file.lastModified}-${idx}`}
+                            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700"
+                          >
                             <div className="font-medium">{file.name}</div>
-                            <div className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</div>
+                            <div className="text-xs text-gray-500">
+                              {(file.size / 1024).toFixed(1)} KB
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -444,28 +701,54 @@ export function ClassDetailPage() {
                   <table className="w-full">
                     <thead className="border-b border-gray-200">
                       <tr>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Họ tên</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Email</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Ngày tham gia</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Bài đã nộp</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Điểm TB (/10)</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Thao tác</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Họ tên
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Email
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Ngày tham gia
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Bài đã nộp
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Điểm TB (/10)
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Thao tác
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {students.map((student) => (
-                        <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <tr
+                          key={student.id}
+                          className="border-b border-gray-100 hover:bg-gray-50"
+                        >
                           <td className="py-4 px-4">
                             <div className="flex items-center gap-3">
                               <div className="size-10 bg-orange-100 rounded-full flex items-center justify-center text-[#D9471E] font-medium">
-                                {student.name.split(' ').map((n) => n[0]).join('')}
+                                {student.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
                               </div>
-                              <span className="font-medium text-gray-900">{student.name}</span>
+                              <span className="font-medium text-gray-900">
+                                {student.name}
+                              </span>
                             </div>
                           </td>
-                          <td className="py-4 px-4 text-gray-600">{student.email}</td>
-                          <td className="py-4 px-4 text-gray-600">{new Date(student.joined).toLocaleDateString()}</td>
-                          <td className="py-4 px-4 text-gray-900">{student.submissions}</td>
+                          <td className="py-4 px-4 text-gray-600">
+                            {student.email}
+                          </td>
+                          <td className="py-4 px-4 text-gray-600">
+                            {new Date(student.joined).toLocaleDateString()}
+                          </td>
+                          <td className="py-4 px-4 text-gray-900">
+                            {student.submissions}
+                          </td>
                           <td className="py-4 px-4">
                             <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
                               {student.avgGrade}/10
@@ -488,15 +771,25 @@ export function ClassDetailPage() {
             {activeTab === "submissions" && (
               <div className="space-y-4">
                 {recentSubmissions.map((submission) => (
-                  <div key={submission.id} className="p-6 rounded-lg border border-gray-200 hover:border-orange-300 hover:shadow-md transition-all">
+                  <div
+                    key={submission.id}
+                    className="p-6 rounded-lg border border-gray-200 hover:border-orange-300 hover:shadow-md transition-all"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="size-12 bg-orange-100 rounded-full flex items-center justify-center text-[#D9471E] font-medium">
-                          {submission.student.split(' ').map(n => n[0]).join('')}
+                          {submission.student
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">{submission.student}</h3>
-                          <p className="text-sm text-gray-600">{submission.exam}</p>
+                          <h3 className="font-semibold text-gray-900">
+                            {submission.student}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {submission.exam}
+                          </p>
                           <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                             <Clock className="size-3" />
                             {submission.submittedAt}
@@ -511,9 +804,13 @@ export function ClassDetailPage() {
                             <span>AI đã chấm</span>
                           </div>
                         )}
-                        
-                        <span className={`px-4 py-2 rounded-lg text-sm font-medium ${getSubmissionStatusColor(submission.status)}`}>
-                          {submission.status === "graded" ? `Điểm: ${submission.grade}/10` : "Chờ chấm"}
+
+                        <span
+                          className={`px-4 py-2 rounded-lg text-sm font-medium ${getSubmissionStatusColor(submission.status)}`}
+                        >
+                          {submission.status === "graded"
+                            ? `Điểm: ${submission.grade}/10`
+                            : "Chờ chấm"}
                         </span>
 
                         <Link
@@ -541,10 +838,13 @@ export function ClassDetailPage() {
                 <AlertCircle className="size-12 text-red-600" />
               </div>
             </div>
-            
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">Xóa lớp học?</h2>
+
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
+              Xóa lớp học?
+            </h2>
             <p className="text-gray-600 mb-6 text-center">
-              Bạn có chắc muốn xóa "{classData.name}"? Hành động này không thể hoàn tác và sẽ xóa toàn bộ bài kiểm tra cùng bài nộp liên quan.
+              Bạn có chắc muốn xóa "{classData.name}"? Hành động này không thể
+              hoàn tác và sẽ xóa toàn bộ bài kiểm tra cùng bài nộp liên quan.
             </p>
 
             <div className="flex gap-4">
@@ -573,18 +873,26 @@ export function ClassDetailPage() {
                 <AlertCircle className="size-12 text-yellow-600" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">Xác nhận nộp</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
+              Xác nhận nộp
+            </h2>
             <p className="text-gray-600 mb-6 text-center">
-              Bạn có chắc muốn nộp thư mục/tệp này chứ, hãy chắc chắn bạn đã chọn đúng lớp/học sinh để Scorify chấm cho bạn nhé.
+              Bạn có chắc muốn nộp thư mục/tệp này chứ, hãy chắc chắn bạn đã
+              chọn đúng lớp/học sinh để Scorify chấm cho bạn nhé.
             </p>
             <div className="max-h-44 overflow-y-auto mb-6 border border-gray-200 rounded-lg p-4">
               {pendingFiles.slice(0, 10).map((file, index) => (
-                <div key={`${file.name}-${file.lastModified}-${index}`} className="text-sm text-gray-700 mb-2">
+                <div
+                  key={`${file.name}-${file.lastModified}-${index}`}
+                  className="text-sm text-gray-700 mb-2"
+                >
                   {file.name} • {(file.size / 1024).toFixed(1)} KB
                 </div>
               ))}
               {pendingFiles.length > 10 && (
-                <div className="text-xs text-gray-500">... và {pendingFiles.length - 10} tệp khác</div>
+                <div className="text-xs text-gray-500">
+                  ... và {pendingFiles.length - 10} tệp khác
+                </div>
               )}
             </div>
             <div className="flex gap-4">
