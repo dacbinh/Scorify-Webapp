@@ -1,6 +1,11 @@
-import { RouterProvider } from "react-router-dom";
-import { router } from "./routes";
+// src/app/App.tsx
+
+import { RouteCentral } from "./routes/index";
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <div className="antialiased text-slate-900">
+      <RouteCentral />
+    </div>
+  );
 }

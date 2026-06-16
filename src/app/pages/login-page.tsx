@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import { GraduationCap, Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const [role, setRole] = useState<"teacher" | "admin">("teacher");
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -13,96 +12,38 @@ export function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login data:", { ...formData, role });
-
-    if (role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/dashboard");
-    }
+    console.log("Submitting credentials:", formData);
+    
+    // Auth service logic can go here. For now, we redirect directly to your streamlined teacher flow:
+    navigate("/teacher/upload");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 max-w-md w-full p-10">
+        
+        {/* Brand Logo & Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <GraduationCap className="size-8 text-[#F05123]" />
-            <span className="font-semibold text-xl">Scorify</span>
+          <Link to="/" className="inline-flex items-center gap-2 mb-3 justify-center">
+            <GraduationCap className="size-6 text-[#F05123] fill-[#F05123]" />
+            <span className="font-bold text-lg text-gray-900 tracking-wide">Scorify</span>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Chào mừng quay lại
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            Mừng bạn trở lại
           </h1>
-          <p className="text-gray-600">Đăng nhập để vào bảng điều khiển</p>
         </div>
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Đăng nhập với vai trò
-          </label>
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => setRole("teacher")}
-              className={`p-3 rounded-lg border-2 transition-all ${
-                role === "teacher"
-                  ? "border-[#F05123] bg-orange-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <div
-                  className={`p-2 rounded-lg ${role === "teacher" ? "bg-[#F05123]" : "bg-gray-200"}`}
-                >
-                  <GraduationCap
-                    className={`size-5 ${role === "teacher" ? "text-white" : "text-gray-600"}`}
-                  />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-gray-900 text-sm">
-                    Giáo viên
-                  </div>
-                </div>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setRole("admin")}
-              className={`p-3 rounded-lg border-2 transition-all ${
-                role === "admin"
-                  ? "border-[#F05123] bg-orange-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <div
-                  className={`p-2 rounded-lg ${role === "admin" ? "bg-[#F05123]" : "bg-gray-200"}`}
-                >
-                  <User
-                    className={`size-5 ${role === "admin" ? "text-white" : "text-gray-600"}`}
-                  />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-gray-900 text-sm">
-                    Admin
-                  </div>
-                </div>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Credentials Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-xs font-semibold text-gray-700 mb-1.5"
             >
-              Email hoặc số điện thoại
+              Email hoặc số di động
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
               <input
                 type="text"
                 id="email"
@@ -110,8 +51,9 @@ export function LoginPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F05123] focus:border-transparent"
-                placeholder="your.email@example.com"
+                className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                placeholder="mailcuatoi@gmail.com"
+                required
               />
             </div>
           </div>
@@ -119,12 +61,12 @@ export function LoginPage() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-xs font-semibold text-gray-700 mb-1.5"
             >
               Mật khẩu
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
@@ -132,67 +74,75 @@ export function LoginPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F05123] focus:border-transparent"
+                className="w-full pl-9 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 placeholder="Nhập mật khẩu"
+                required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 {showPassword ? (
-                  <EyeOff className="size-5" />
+                  <EyeOff className="size-4" />
                 ) : (
-                  <Eye className="size-5" />
+                  <Eye className="size-4" />
                 )}
               </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <label className="flex items-center">
+          {/* Remember & Forgot Password Links */}
+          <div className="flex items-center justify-between pt-1">
+            <label className="flex items-center cursor-pointer select-none">
               <input
                 type="checkbox"
-                className="size-4 text-[#F05123] border-gray-300 rounded"
+                className="size-3.5 text-blue-600 border-gray-300 rounded focus:ring-0 focus:ring-offset-0"
               />
-              <span className="ml-2 text-sm text-gray-600">
+              <span className="ml-2 text-xs font-medium text-gray-700">
                 Ghi nhớ đăng nhập
               </span>
             </label>
-            <a href="#" className="text-sm text-[#F05123] hover:text-[#D9471E]">
+            <a href="#" className="text-xs font-medium text-blue-500 hover:underline">
               Quên mật khẩu?
             </a>
           </div>
 
+          {/* Exact Navy Blue Submit Button from UI Design */}
           <button
             type="submit"
-            className="w-full bg-[#F05123] text-white py-3 rounded-lg hover:bg-[#D9471E] transition-colors font-medium"
+            className="w-full bg-[#344464] text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-[#28354f] transition-colors shadow-sm mt-2"
           >
             Đăng nhập
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">
+        {/* Sign up invitation */}
+        <div className="mt-5 text-center">
+          <p className="text-xs font-medium text-gray-600">
             Chưa có tài khoản?{" "}
             <Link
               to="/signup"
-              className="text-[#F05123] hover:text-[#D9471E] font-medium"
+              className="text-blue-500 hover:underline"
             >
-              Đăng ký
+              Đăng ký tại đây
             </Link>
           </p>
         </div>
 
-        <div className="mt-6 flex items-center">
-          <div className="flex-1 border-t border-gray-300"></div>
-          <span className="px-4 text-sm text-gray-500">Hoặc tiếp tục với</span>
-          <div className="flex-1 border-t border-gray-300"></div>
+        {/* Divider separator */}
+        <div className="mt-5 flex items-center">
+          <div className="flex-1 border-t border-gray-200"></div>
+          <span className="px-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">
+            Hoặc đăng nhập với
+          </span>
+          <div className="flex-1 border-t border-gray-200"></div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4">
-          <button className="flex items-center justify-center gap-2 border border-gray-300 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-            <svg className="size-5" viewBox="0 0 24 24">
+        {/* Social Authentication Options */}
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button className="flex items-center justify-center gap-2 border border-gray-200 py-2 rounded-lg bg-white hover:bg-gray-50 transition-colors shadow-sm">
+            <svg className="size-4" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -210,15 +160,16 @@ export function LoginPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            <span className="text-sm font-medium text-gray-700">Google</span>
+            <span className="text-xs font-semibold text-gray-700">Google</span>
           </button>
-          <button className="flex items-center justify-center gap-2 border border-gray-300 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-            <svg className="size-5" fill="#1877F2" viewBox="0 0 24 24">
+          <button className="flex items-center justify-center gap-2 border border-gray-200 py-2 rounded-lg bg-white hover:bg-gray-50 transition-colors shadow-sm">
+            <svg className="size-4" fill="#1877F2" viewBox="0 0 24 24">
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
             </svg>
-            <span className="text-sm font-medium text-gray-700">Facebook</span>
+            <span className="text-xs font-semibold text-gray-700">Facebook</span>
           </button>
         </div>
+
       </div>
     </div>
   );
