@@ -15,7 +15,7 @@ export function LoginPage() {
     console.log("Submitting credentials:", formData);
     
     // Auth service logic can go here. For now, we redirect directly to your streamlined teacher flow:
-    navigate("/teacher/upload");
+    navigate("/workspace");
   };
 
   return (
