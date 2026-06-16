@@ -1,4 +1,5 @@
 // src/app/routes/teacherRoutes.tsx
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import { TeacherLayout } from "../layouts/teacherLayout";
 import { WorkspacePage } from "../pages/Teacher/teacher-workspace-page";
@@ -11,6 +12,7 @@ import { AssignmentDetailPage } from "../pages/Teacher/assignment-detail-page";
 import { CreateAssignmentPage } from "../pages/Teacher/create-assignment-page";
 import { ClassroomDetailScreen } from "../pages/Teacher/classroom-detail-page";
 import { AIGradingPage } from "../pages/Teacher/ai-grading-page";
+import { SubscriptionPage } from "../pages/subscription-page";
 
 export function TeacherRoutes() {
   return (
@@ -30,6 +32,7 @@ export function TeacherRoutes() {
         <Route path="classrooms/:classId/assignments/:id" element={<AssignmentDetailPage />} />
         <Route path="classrooms/:classId/assignments/:id/grading" element={<AIGradingPage />} />
         
+        <Route path="workspace/pricing" element={<SubscriptionPage />} />
         <Route path="payment" element={<PaymentPage />} />
       </Route>
     </Routes>
