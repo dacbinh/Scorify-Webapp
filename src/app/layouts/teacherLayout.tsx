@@ -16,7 +16,7 @@ export function TeacherLayout() {
 
   const navItems = [
     { icon: LayoutDashboard, path: "/workspace", label: "Tổng quan" },
-    { icon: Binary, path: "/rubrics", label: "Ma trận tiêu chí (Rubric)" },
+    { icon: Binary, path: "/rubrics", label: "Quản lý bài tập" },
     { icon: School, path: "/classrooms", label: "Lớp học & Bài tập" },
     { icon: Wallet, path: "/payment", label: "Gói dịch vụ" },
   ];

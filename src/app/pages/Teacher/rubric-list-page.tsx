@@ -81,13 +81,13 @@ export function RubricListPage() {
       linkedFolders: 0
     };
     setRubrics([newRubric, ...rubrics]);
-    toast.success("Đã nhân bản bộ tiêu chí thành công!");
+    toast.success("Đã nhân bản bài tập thành công!");
   };
 
   // Handle Mock Delete Function
   const handleDelete = (id: string) => {
     setRubrics(rubrics.filter((r: any) => r.id !== id));
-    toast.error("Đã gỡ bỏ bộ rubric.");
+    toast.error("Đã gỡ bỏ bài tập.");
   };
 
   const filteredRubrics = rubrics.filter((r: any) =>
@@ -100,7 +100,7 @@ export function RubricListPage() {
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <Calculator className="size-5 text-indigo-600" />
-            Ma trận Tiêu chí & Đáp án Toán
+            Danh sách Bài tập & Đề thi
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
             Quản lý cấu trúc đề thi, lời giải chi tiết và biểu điểm phân phối các bước để AI quét chấm.
@@ -110,7 +110,7 @@ export function RubricListPage() {
         <Link to="/rubrics/create">
           <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 h-10 px-4 rounded-xl shadow-md">
             <Plus className="size-4 stroke-[2.5]" />
-            Thêm đáp án / Rubric mới
+            Thêm bài tập / Đề thi mới
           </Button>
         </Link>
       </div>
@@ -121,7 +121,7 @@ export function RubricListPage() {
           <Input 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm kiếm tiêu chí, mã đề toán..." 
+            placeholder="Tìm kiếm bài tập, mã đề..." 
             className="pl-9 h-10 rounded-lg text-xs bg-slate-50/50 border-slate-200 focus:bg-white transition-all"
           />
         </div>
@@ -200,7 +200,7 @@ export function RubricListPage() {
                       <Copy className="size-3.5 text-slate-400" /> Nhân bản mẫu
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleDelete(rubric.id)} className="gap-2 cursor-pointer text-rose-600 focus:text-rose-600 focus:bg-rose-50 font-semibold">
-                      <Trash2 className="size-3.5" /> Xóa bộ tiêu chí
+                      <Trash2 className="size-3.5" /> Xóa bài tập
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -212,8 +212,8 @@ export function RubricListPage() {
 
       {filteredRubrics.length === 0 && (
         <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-200 p-6">
-          <h3 className="font-bold text-slate-700 text-sm mb-1">Không tìm thấy biểu điểm nào</h3>
-          <p className="text-xs text-slate-400 max-w-xs mx-auto mb-4">Hãy thử điều chỉnh lại từ khóa hoặc tạo mới một bộ tiêu chí đáp án.</p>
+          <h3 className="font-bold text-slate-700 text-sm mb-1">Không tìm thấy bài tập nào</h3>
+          <p className="text-xs text-slate-400 max-w-xs mx-auto mb-4">Hãy thử điều chỉnh lại từ khóa hoặc tạo mới một bài tập/đề thi mới.</p>
         </div>
       )}
     </div>
