@@ -47,7 +47,7 @@ export function PaymentPage() {
         teachers[0].subscription = "pro";
         saveAdminTeachers(teachers);
       }
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setTimeout(() => navigate("/workspace"), 2000);
     }
   }, [isPaying, secondsLeft, navigate]);
 
@@ -129,7 +129,7 @@ export function PaymentPage() {
               <span className="font-semibold text-xl">Scorify</span>
             </div>
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/workspace")}
               className="text-gray-600 hover:text-gray-900"
             >
               ← Quay lại
