@@ -18,7 +18,6 @@ export function TeacherLayout() {
     { icon: LayoutDashboard, path: "/workspace", label: "Tổng quan" },
     { icon: Binary, path: "/rubrics", label: "Ma trận tiêu chí (Rubric)" },
     { icon: School, path: "/classrooms", label: "Lớp học & Bài tập" },
-    { icon: FileSignature, path: "/submissions", label: "Tải lên & Chấm điểm" },
     { icon: Wallet, path: "/payment", label: "Gói dịch vụ" },
   ];
 

@@ -9,18 +9,18 @@ import { TeacherRoutes } from "./teacherRoutes";
 import { AdminRoutes } from "./adminRoutes";
 
 function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; allowedRole: "teacher" | "admin" }) {
-//   const auth = {
-//     isAuthenticated: true, 
-//     role: "teacher" as "teacher" | "admin"
-//   };
+  const auth = {
+    isAuthenticated: true, 
+    role: "teacher" as "teacher" | "admin"
+  };
 
-//   if (!auth.isAuthenticated) {
-//     return <Navigate to="/login" replace />;
-//   }
+  if (!auth.isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
-//   if (auth.role !== allowedRole) {
-//     return <Navigate to={auth.role === "admin" ? "/admin" : "/dashboard"} replace />;
-//   }
+  if (auth.role !== allowedRole) {
+    return <Navigate to={auth.role === "admin" ? "/admin" : "/dashboard"} replace />;
+  }
 
   return <>{children}</>;
 }
