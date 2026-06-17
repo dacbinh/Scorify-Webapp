@@ -1,3 +1,5 @@
+// src/app/pages/WorkspacePage.tsx
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -10,7 +12,6 @@ import {
   Plus,
   Users,
   Layers,
-  GraduationCap,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
@@ -27,7 +28,7 @@ interface DashboardStats {
 interface ClassroomActivity {
   id: string;
   name: string;
-  grade: string;
+  description: string;
   studentCount: number;
   activeAssignments: number;
 }
@@ -49,12 +50,8 @@ export function WorkspacePage() {
     assignmentsCount: 0,
     gradedCount: 0,
   });
-  const [recentClassrooms, setRecentClassrooms] = useState<ClassroomActivity[]>(
-    [],
-  );
-  const [recentAIActivities, setRecentAIActivities] = useState<AIActivityLog[]>(
-    [],
-  );
+  const [recentClassrooms, setRecentClassrooms] = useState<ClassroomActivity[]>([]);
+  const [recentAIActivities, setRecentAIActivities] = useState<AIActivityLog[]>([]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -63,7 +60,7 @@ export function WorkspacePage() {
       try {
         setLoading(true);
 
-        // 1. Chạy đồng thời tất cả các truy vấn đếm số lượng (Stats Card) và dữ liệu danh sách
+        // 1. Concurrent Fetching engine targeting the correct PostgreSQL relations
         const [
           classroomsCountRes,
           assignmentsCountRes,
@@ -71,90 +68,86 @@ export function WorkspacePage() {
           classroomsDataRes,
           activitiesDataRes,
         ] = await Promise.all([
-          // Đếm số lớp học của giáo viên hiện tại
+          // Fix table: public.class | Field: teacher_profile_id
           supabaseClient
-            .from("classrooms")
+            .from("class")
             .select("*", { count: "exact", head: true })
-            .eq("teacher_id", user.id),
+            .eq("teacher_profile_id", user.id),
 
-          // Đếm số bài tập/rubric của giáo viên hiện tại
+          // Fix table: public.exam | Field: created_by
           supabaseClient
-            .from("assignments")
+            .from("exam")
             .select("*", { count: "exact", head: true })
-            .eq("teacher_id", user.id),
+            .eq("created_by", user.id),
 
-          // Đếm tổng số bài nộp đã được AI chấm (ai_score không null) thuộc các bài tập của giáo viên này
+          // Fix table: public.exam_result (This stores scores/feedbacks) linked through exam table
           supabaseClient
-            .from("submissions")
-            .select("*, assignments!inner(*)", { count: "exact", head: true })
-            .eq("assignments.teacher_id", user.id)
-            .not("ai_score", "is", null),
+            .from("exam_result")
+            .select("*, exam!inner(*)", { count: "exact", head: true })
+            .eq("exam.created_by", user.id)
+            .not("score", "is", null),
 
-          // Lấy danh sách lớp học hoạt động gần đây kèm theo đếm số học sinh và số bài tập bên trong
+          // Fix table: Get recent classes joined with exact class_student and exam counter definitions
           supabaseClient
-            .from("classrooms")
-            .select(
-              `
-              id,
-              name,
-              grade,
-              updated_at,
-              classroom_students(count),
-              assignments(count)
-            `,
-            )
-            .eq("teacher_id", user.id)
-            .order("updated_at", { ascending: false })
+            .from("class")
+            .select(`
+              class_id,
+              class_name,
+              description,
+              created_at,
+              class_student(count),
+              exam(count)
+            `)
+            .eq("teacher_profile_id", user.id)
+            .order("created_at", { ascending: false })
             .limit(4),
 
-          // Lấy nhật ký chấm điểm AI gần đây nhất
+          // Fix table: Extract recent evaluations from exam_result joined with student metadata
           supabaseClient
-            .from("submissions")
-            .select(
-              `
-              id,
-              ai_score,
-              ai_feedback,
-              updated_at,
-              profiles:student_id(name),
-              assignments:assignment_id(name, teacher_id)
-            `,
-            )
-            .eq("assignments.teacher_id", user.id)
-            .not("ai_score", "is", null)
-            .order("updated_at", { ascending: false })
+            .from("exam_result")
+            .select(`
+              exam_result_id,
+              score,
+              feedback,
+              graded_at,
+              student:student_id(full_name),
+              exam:exam_id(exam_name, created_by)
+            `)
+            .eq("exam.created_by", user.id)
+            .not("score", "is", null)
+            .order("graded_at", { ascending: false })
             .limit(5),
         ]);
 
-        // 2. Cập nhật State cho các thẻ thống kê tổng quan
+        // 2. Set Overview Counters
         setStats({
           classroomsCount: classroomsCountRes.count || 0,
           assignmentsCount: assignmentsCountRes.count || 0,
           gradedCount: gradedSubmissionsCountRes.count || 0,
         });
 
-        // 3. Mapping dữ liệu lớp học gần đây
+        // 3. Mapping Recent Workspaces (Classes)
         if (classroomsDataRes.data) {
           const mappedClassrooms = classroomsDataRes.data.map((cls: any) => ({
-            id: cls.id,
-            name: cls.name,
-            grade: cls.grade || "Khối chung",
-            studentCount: cls.classroom_students?.[0]?.count || 0,
-            activeAssignments: cls.assignments?.[0]?.count || 0,
+            id: cls.class_id,
+            name: cls.class_name,
+            description: cls.description || "Chưa có mô tả lớp học",
+            studentCount: cls.class_student?.[0]?.count || 0,
+            activeAssignments: cls.exam?.[0]?.count || 0,
           }));
           setRecentClassrooms(mappedClassrooms);
         }
 
-        // 4. Mapping dữ liệu nhật ký chấm AI gần đây
+        // 4. Mapping Activity Feed Log rows
         if (activitiesDataRes.data) {
-          const mappedActivities = activitiesDataRes.data.map((sub: any) => ({
-            studentName: sub.profiles?.name || "Học sinh ẩn danh",
-            assignmentName: sub.assignments?.name || "Bài tập không tên",
+          const mappedActivities = activitiesDataRes.data.map((res: any) => ({
+            studentName: res.student?.full_name || "Học sinh ẩn danh",
+            assignmentName: res.exam?.exam_name || "Bài tập không tên",
             score:
-              sub.ai_score !== undefined && sub.ai_score !== null
-                ? `${sub.ai_score}/10`
+              res.score !== undefined && res.score !== null
+                ? `${res.score}/10`
                 : "Chưa chấm",
-            feedback: sub.ai_feedback || "Không có nhận xét tự động.",
+            feedback: res.feedback || "Không có nhận xét tự động từ hệ thống.",
           }));
           setRecentAIActivities(mappedActivities);
         }
@@ -202,15 +195,14 @@ export function WorkspacePage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      {/* 🌟 ĐỒNG BỘ TÊN THẬT TỪ AUTH CONTEXT */}
+      {/* HEADER ROW */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Xin chào, {profile?.name || "Giáo viên"}! 👋
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Hệ thống trợ lý chấm điểm Scorify AI đã sẵn sàng đồng hành cùng các
-            đợt đánh giá của bạn.
+            Hệ thống trợ lý chấm điểm Scorify AI đã sẵn sàng đồng hành cùng các đợt đánh giá của bạn.
           </p>
         </div>
 
@@ -232,7 +224,7 @@ export function WorkspacePage() {
         </div>
       </div>
 
-      {/* 📊 CORE SYSTEM METRIC CARDS */}
+      {/* SYSTEM METRICS */}
       <div className="grid sm:grid-cols-3 gap-5">
         {statCardsConfig.map((stat, idx) => {
           const Icon = stat.icon;
@@ -257,9 +249,9 @@ export function WorkspacePage() {
         })}
       </div>
 
-      {/* 🚀 WORKSPACE CONTENT SECTION */}
+      {/* MAIN CONTAINER */}
       <div className="grid lg:grid-cols-3 gap-8 pt-2">
-        {/* LEFT COLUMN: ACTIVE CLASSROOM WORKSPACES */}
+        {/* RECENT WORKSPACES */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between px-1">
             <div>
@@ -280,8 +272,7 @@ export function WorkspacePage() {
 
           {recentClassrooms.length === 0 ? (
             <div className="bg-white border border-dashed border-slate-200 rounded-xl p-8 text-center text-sm text-slate-400">
-              Bạn chưa có lớp học nào. Hãy bấm nút Tạo đợt chấm bài mới để bắt
-              đầu.
+              Bạn chưa có lớp học nào. Hãy bấm nút Tạo đợt chấm bài mới để bắt đầu.
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 gap-4">
@@ -294,15 +285,18 @@ export function WorkspacePage() {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="p-2 bg-indigo-50/70 text-indigo-600 rounded-lg group-hover:scale-105 transition-transform">
-                        <GraduationCap className="size-4.5" />
+                        <School className="size-4" />
                       </div>
                       <Badge className="bg-slate-100 text-slate-500 font-bold text-[9px] rounded px-1.5 py-0">
-                        {item.grade}
+                        Lớp học
                       </Badge>
                     </div>
                     <h3 className="font-bold text-slate-800 text-xs tracking-tight line-clamp-1 group-hover:text-indigo-600 transition-colors pt-1">
                       {item.name}
                     </h3>
+                    <p className="text-[11px] text-slate-400 line-clamp-1">
+                      {item.description}
+                    </p>
                   </div>
 
                   <div className="border-t border-slate-50 pt-3 mt-4 flex items-center justify-between text-[10px] text-slate-400 font-medium">
@@ -312,7 +306,7 @@ export function WorkspacePage() {
                     </span>
                     <span className="flex items-center gap-1 text-indigo-600 font-bold bg-indigo-50/50 px-1.5 py-0.5 rounded">
                       <Layers className="size-3" />
-                      {item.activeAssignments} Bài tập
+                      {item.activeAssignments} Đợt kiểm tra
                     </span>
                   </div>
                 </div>
@@ -321,7 +315,7 @@ export function WorkspacePage() {
           )}
         </div>
 
-        {/* RIGHT COLUMN: AI LOG & FEEDBACK TELEMETRY SCREENER */}
+        {/* RECENT EVALUATIONS LOG FEED */}
         <div className="lg:col-span-1 space-y-4">
           <div className="px-1">
             <h2 className="text-lg font-bold text-slate-900 tracking-tight">
@@ -345,7 +339,7 @@ export function WorkspacePage() {
                     className="text-xs border-b border-slate-50 pb-3.5 last:border-0 last:pb-0"
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="font-bold text-slate-800 truncate flex items-center gap-1">
+                      <span className="font-bold text-slate-800 truncate flex items-center gap-1+">
                         <Cpu className="size-3 text-indigo-500 shrink-0" />
                         {activity.studentName}
                       </span>
