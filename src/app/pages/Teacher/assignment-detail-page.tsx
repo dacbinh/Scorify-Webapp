@@ -21,7 +21,8 @@ import {
   Layers,
   ArrowUpRight,
   MoreVertical,
-  X
+  X,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -201,7 +202,7 @@ export function AssignmentDetailPage() {
     // Reset input
     if (individualUploadRef.current) individualUploadRef.current.value = '';
 
-    toast.info("Đang tải bài làm lên và phân tích AI...");
+    toast.info("Đang tải bài làm lên...");
 
     try {
       // 1. Upload file
@@ -215,22 +216,53 @@ export function AssignmentDetailPage() {
       
       if (uploadError) throw uploadError;
 
-      // 2. Create mock exam_result to simulate AI grading completion
-      const mockScore = parseFloat((Math.random() * (10 - 4) + 4).toFixed(1));
+      // Get signed URL for the image we just uploaded
+      const { data: signedData, error: signedError } = await supabaseClient.storage
+        .from('Scorify_storagedev')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
       
-      const { error: insertError } = await supabaseClient
+      if (signedError) throw signedError;
+      
+      const submissionImageUrl = signedData.signedUrl;
+
+      // 2. Prepare empty JSON for feedback column (AI will fill this later)
+      const initialFeedback = JSON.stringify({});
+      
+      // Check if result already exists to avoid duplicate constraint violations
+      const { data: existingResult } = await supabaseClient
         .from('exam_result')
-        .insert({
-          exam_id: examId,
-          student_id: targetStudentId,
-          score: mockScore,
-          ai_feedback: "Bài làm đã được AI chấm điểm thành công. " + (mockScore > 8 ? "Học sinh làm bài rất tốt." : "Cần cố gắng thêm ở phần tính toán."),
-          graded_at: new Date().toISOString()
-        });
+        .select('exam_result_id')
+        .match({ exam_id: examId, student_id: targetStudentId })
+        .maybeSingle();
 
-      if (insertError) throw insertError;
+      if (existingResult) {
+         const { error: updateError } = await supabaseClient
+          .from('exam_result')
+          .update({
+            signed_url: submissionImageUrl,
+            feedback: initialFeedback,
+            score: 0, // 0 denotes ungraded
+            graded_at: null
+          })
+          .eq('exam_result_id', existingResult.exam_result_id);
+          
+         if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabaseClient
+          .from('exam_result')
+          .insert({
+            exam_id: examId,
+            student_id: targetStudentId,
+            signed_url: submissionImageUrl,
+            feedback: initialFeedback,
+            score: 0, // 0 denotes ungraded
+            // graded_at remains null since it's not graded yet
+          });
 
-      toast.success("Đã chấm xong bài làm!");
+        if (insertError) throw insertError;
+      }
+
+      toast.success("Đã tải bài làm lên thành công! (Chờ chấm điểm)");
       await refreshStudentData();
 
     } catch (error: any) {
@@ -238,6 +270,26 @@ export function AssignmentDetailPage() {
       toast.error(`Có lỗi xảy ra khi tải bài lên: ${error.message}`);
     } finally {
       setTargetStudentId(null);
+    }
+  };
+
+  const handleDeleteSubmission = async (studentId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn hủy kết quả/thu hồi bài làm này không?")) return;
+
+    toast.loading("Đang hủy kết quả...", { id: "delete-submission" });
+    try {
+      const { error } = await supabaseClient
+        .from('exam_result')
+        .delete()
+        .match({ exam_id: examId, student_id: studentId });
+
+      if (error) throw error;
+
+      toast.success("Đã hủy kết quả bài làm thành công!", { id: "delete-submission" });
+      await refreshStudentData();
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast.error(`Lỗi khi hủy kết quả: ${error.message}`, { id: "delete-submission" });
     }
   };
 
@@ -449,10 +501,17 @@ export function AssignmentDetailPage() {
                   </TableCell>
                   <TableCell className="text-center">
                     {stu.result ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                        <CheckCircle2 className="size-2.5" />
-                        Đã chấm xong
-                      </span>
+                      stu.result.score > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                          <CheckCircle2 className="size-2.5" />
+                          Đã chấm xong
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                          <Clock className="size-2.5" />
+                          Đã nộp (Chờ chấm)
+                        </span>
+                      )
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
                         Chưa có bài
@@ -460,7 +519,7 @@ export function AssignmentDetailPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {stu.result ? (
+                    {stu.result && stu.result.score > 0 ? (
                       <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                         {stu.result.score?.toFixed(1)} / {exam.max_score}
                       </span>
@@ -470,49 +529,53 @@ export function AssignmentDetailPage() {
                   </TableCell>
                   <TableCell className="text-right px-6">
                     <div className="flex items-center justify-end gap-1">
-                      {stu.result ? (
+                      {/* Xem chi tiết - only if there's a result */}
+                      {stu.result && (
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           className="size-8 rounded-lg text-indigo-600 hover:bg-indigo-50"
                           onClick={() => navigate(`/classrooms/${classId}/assignments/${examId}/grading?studentId=${stu.student_id}`)}
+                          title="Xem bài làm"
                         >
                           <Eye className="size-4" />
                         </Button>
-                      ) : (
-                        <>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="size-8 rounded-lg text-indigo-500 hover:bg-indigo-50"
-                            onClick={() => toast.info(`Chế độ scan cho học sinh ${stu.full_name} (Mobile) đang phát triển.`)}
-                          >
-                            <Camera className="size-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="size-8 rounded-lg text-indigo-500 hover:bg-indigo-50"
-                            onClick={() => triggerIndividualUpload(stu.student_id)}
-                            title="Tải lên bài làm (Ảnh)"
-                          >
-                            <UploadCloud className="size-4" />
-                          </Button>
-                        </>
                       )}
+
+                      {/* Scan bài làm */}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="size-8 rounded-lg text-indigo-500 hover:bg-indigo-50"
+                        onClick={() => toast.info(`Chế độ scan cho học sinh ${stu.full_name} (Mobile) đang phát triển.`)}
+                        title="Scan bài bằng điện thoại"
+                      >
+                        <Camera className="size-4" />
+                      </Button>
+
+                      {/* Tải lên ảnh */}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="size-8 rounded-lg text-indigo-500 hover:bg-indigo-50"
+                        onClick={() => triggerIndividualUpload(stu.student_id)}
+                        title={stu.result ? "Tải lên lại bài làm (Ảnh)" : "Tải lên bài làm (Ảnh)"}
+                      >
+                        <UploadCloud className="size-4" />
+                      </Button>
                       
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="size-8 text-slate-400 hover:text-slate-600 rounded-lg">
-                            <MoreVertical className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40 rounded-xl text-xs font-medium text-slate-600">
-                           <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => toast.info("Đang phát triển")}>
-                            <X className="size-3.5 text-rose-500" /> Hủy kết quả bài này
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {/* Xóa / Hủy bài - only if there's a result */}
+                      {stu.result && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="size-8 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-600"
+                          onClick={() => handleDeleteSubmission(stu.student_id)}
+                          title="Hủy kết quả / Xóa bài"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
