@@ -8,6 +8,7 @@ export interface SubscriptionPlan {
   file_size_limit: number;
   submission_limit: number;
   billing_period: string;
+  status?: string;
 }
 
 export interface UserSubscription {

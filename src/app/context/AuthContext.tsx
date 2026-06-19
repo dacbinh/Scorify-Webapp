@@ -44,13 +44,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
 
-      const {
+      let {
         data: { session },
         error: sessionError,
       } = await supabaseClient.auth.getSession();
 
+      if (!session?.user) {
+        const backupAccess = localStorage.getItem("scorify_access_token");
+        const backupRefresh = localStorage.getItem("scorify_refresh_token");
+
+        if (backupAccess && backupRefresh) {
+          console.log(
+            "Re-hydrating Supabase client instance from token fallbacks...",
+          );
+          const { data: hydratedData, error: hydrateError } =
+            await supabaseClient.auth.setSession({
+              access_token: backupAccess,
+              refresh_token: backupRefresh,
+            });
+
+          if (!hydrateError && hydratedData.session) {
+            session = hydratedData.session;
+          }
+        }
+      }
+
       if (sessionError || !session?.user) {
-        console.warn("No active session found");
+        console.warn("No active session could be resolved.");
         setUser(null);
         setProfile(null);
         setSubscription(null);
@@ -98,14 +118,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       }
 
-      const subDataArray = await subscriptionService.getUserSubscription(
-        authUser.id,
-      );
-      setSubscription(
-        subDataArray && subDataArray.length > 0
-          ? (subDataArray[0] as SubscriptionPlan)
-          : null,
-      );
+      try {
+        const subDataArray = await subscriptionService.getUserSubscription(
+          authUser.id,
+        );
+
+        console.log("RAW SUBSCRIPTION DATA FROM RPC:", subDataArray);
+
+        setSubscription(
+          subDataArray && subDataArray.length > 0
+            ? (subDataArray[0] as SubscriptionPlan)
+            : null,
+        );
+      } catch (subErr) {
+        console.error("Error fetching subscription data details:", subErr);
+        setSubscription(null);
+      }
     } catch (err) {
       console.error("Error aggregating AuthContext:", err);
     } finally {
