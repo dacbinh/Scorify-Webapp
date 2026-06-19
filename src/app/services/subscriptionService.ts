@@ -1,10 +1,9 @@
 // src/app/services/subscriptionService.ts
-
 import { supabaseClient } from "./supabaseClient.ts";
 
 export interface SubscriptionPlan {
   plan_id: string;
-  name: string;
+  plan_name: string;
   price: number;
   file_size_limit: number;
   submission_limit: number;
@@ -17,7 +16,19 @@ export interface UserSubscription {
   plan_id: string;
   start_date: string;
   end_date: string | null;
-  status: "active" | "cancelled" | "expired";
+  status: "active" | "cancelled" | "expired" | "inactive";
+}
+
+export interface BillingHistoryRecord {
+  user_subscription_id: string;
+  start_date: string;
+  end_date: string | null;
+  status: string;
+  subscription_plan: {
+    name: string;
+    price: number;
+    billing_period: string;
+  } | null;
 }
 
 export const subscriptionService = {
@@ -76,4 +87,29 @@ export const subscriptionService = {
       throw error;
     }
   },
+
+  async getBillingHistory(profileId: string): Promise<BillingHistoryRecord[]> {
+    const { data, error } = await supabaseClient
+      .from("user_subscription")
+      .select(`
+        user_subscription_id,
+        start_date,
+        end_date,
+        status,
+        subscription_plan:plan_id (
+          name,
+          price,
+          billing_period
+        )
+      `)
+      .eq("profile_id", profileId)
+      .order("start_date", { ascending: false });
+
+    if (error) {
+      console.error("Error query from user_subscription ledger table:", error.message);
+      throw error;
+    }
+
+    return (data as unknown as BillingHistoryRecord[]) || [];
+  }
 };

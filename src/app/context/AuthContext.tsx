@@ -13,7 +13,6 @@ import {
   SubscriptionPlan,
 } from "../services/subscriptionService";
 
-// Type mappings matching your PostgreSQL definitions
 export interface UserProfile {
   id: string;
   name: string | null;
@@ -27,6 +26,7 @@ export interface AuthContextType {
   subscription: SubscriptionPlan | null; // Joined active subscription_plan details
   loading: boolean;
   refreshSession: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -40,12 +40,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const [loading, setLoading] = useState(true);
 
-  // Modular engine to synchronize context state with live Supabase storage data
   async function fetchSessionData() {
     try {
       setLoading(true);
 
-      // 1. Get current authenticated core user credentials
       const {
         data: { session },
         error: sessionError,
@@ -62,7 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authUser = session.user;
       setUser(authUser);
 
-      // 2. Load custom user profile metadata row
       const { data: profileData, error: profileError } = await supabaseClient
         .from("profiles")
         .select("*")
@@ -72,7 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!profileError && profileData) {
         setProfile(profileData as UserProfile);
       } else {
-        // Parse the local storage backup saved in authService if user_metadata isn't hydrated yet
         const localUserStr = localStorage.getItem("scorify_user");
         let cachedMetadata = null;
         try {
@@ -100,9 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role:
             cachedMetadata?.role || authUser.user_metadata?.role || "teacher",
         });
-      } // 🎯 FIXED: This closing bracket was missing, which broke the try-catch alignment below!
+      }
 
-      // 3. Fetch active user subscription plan via your existing service RPC method
       const subDataArray = await subscriptionService.getUserSubscription(
         authUser.id,
       );
@@ -118,8 +113,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function refreshProfileData() {
+    if (!user?.id) return;
+    try {
+      const { data, error } = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!error && data) {
+        setProfile(data as UserProfile);
+      }
+    } catch (e) {
+      console.error(
+        "Failed explicitly updating context profile reference node:",
+        e,
+      );
+    }
+  }
+
   useEffect(() => {
-    // Listen to real-time auth changes (Sign In, Sign Out, Token Refreshing)
     const {
       data: { subscription: authListener },
     } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
@@ -144,7 +157,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Initial pull down logic
     fetchSessionData();
 
     return () => {
@@ -164,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscription,
         loading,
         refreshSession: fetchSessionData,
+        refreshProfile: refreshProfileData,
         logout,
       }}
     >

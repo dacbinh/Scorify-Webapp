@@ -260,10 +260,10 @@ export function WorkspacePage() {
             feedback: res.feedback || "Không có nhận xét tự động từ hệ thống.",
           }));
           setRecentAIActivities(mappedActivities);
-          console.log(
-            "Recent AI gradings: ",
-            JSON.stringify(mappedActivities, null, 2),
-          );
+          // console.log(
+          //   "Recent AI gradings: ",
+          //   JSON.stringify(mappedActivities, null, 2),
+          // );
         }
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu màn hình chính:", error);

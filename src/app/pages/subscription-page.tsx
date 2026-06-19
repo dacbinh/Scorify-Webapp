@@ -265,7 +265,7 @@ export function SubscriptionPage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-gray-900 text-lg">
-                        {plan.name}
+                        {plan.plan_name}
                       </h3>
                       <p className="text-xs text-gray-500 font-medium">
                         Kỳ hạn {plan.billing_period}

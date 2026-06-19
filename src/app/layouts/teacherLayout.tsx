@@ -121,7 +121,6 @@ export function TeacherLayout() {
             </div>
           </Link>
 
-          {/* Explicit log-out utility trigger button */}
           <button
             onClick={handleLogout}
             className="w-full h-12 flex items-center justify-center text-slate-500 hover:text-rose-400 transition-colors rounded-xl"
@@ -137,8 +136,7 @@ export function TeacherLayout() {
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              {/* 🎯 Dynamic subscription tier fallback rendering naming */}
-              Scorify AI — Gói {subscription?.name || "Cơ Bản (Free)"}
+              Scorify AI — Gói {subscription?.plan_name || "Cơ Bản (Free)"}
             </span>
           </div>
 
@@ -153,7 +151,6 @@ export function TeacherLayout() {
               className="flex items-center gap-3 border-l border-slate-100 pl-4 group"
             >
               <div className="text-right hidden sm:block">
-                {/* 🎯 Pull profile name values from global data stream */}
                 <p className="text-sm font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">
                   {profile?.name || "Người dùng Scorify"}
                 </p>
