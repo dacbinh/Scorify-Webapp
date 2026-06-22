@@ -1,64 +1,54 @@
-import { publicAxiosInstance } from './axiosInstance';
+import axiosInstance, { publicAxiosInstance } from './axiosInstance';
 
-export interface QueueResponse {
-  status: string;
-  data: {
-    task_id: string;
-    lane: number;
-    position: number;
-  };
-}
+export const queueEndpoints = {
+  /**
+   * Endpoint: /queues/register
+   * Đăng ký hàng đợi và nhận task_id
+   */
+  registerQueue: async () => {
+    const response = await publicAxiosInstance.post('/queues/register');
+    return response.data; // { status, data: { task_id, lane, position } }
+  },
+};
 
 export const documentEndpoints = {
   /**
-   * Đăng ký một task vào hàng đợi
-   */
-  registerQueue: async (): Promise<QueueResponse> => {
-    const response = await publicAxiosInstance.post('/queues/register');
-    return response.data;
-  },
-
-  /**
    * Endpoint: /documents/detect
-   * Phân tích và chuyển đổi hình ảnh sang văn bản markdown latex kèm model_option.
+   * Phân tích và chuyển đổi hình ảnh sang văn bản markdown latex.
    */
-  detectLayout: async (file: File, modelOption: string, taskId: string) => {
+  detectLayout: async (taskId: string, file: File, modelOption: string = 'Scorify Medium') => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('model_option', modelOption);
     formData.append('task_id', taskId);
+    formData.append('model_option', modelOption);
+    formData.append('file', file);
 
     const response = await publicAxiosInstance.post('/documents/detect', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      timeout: 300000,
-      validateStatus: (status) => status >= 200 && status < 300,
     });
-    return response;
+    return response.data; // { document_lines: [...] }
   },
 };
 
 export const gradingEndpoints = {
   /**
    * Endpoint: /gradings/rubrics
-   * Đối chiếu bài làm với file rubric đáp án theo model_option cụ thể.
+   * Nhận file ảnh và văn bản (document) để chấm điểm chi tiết theo từng dòng.
    */
-  gradeByRubric: async (examFile: File, rubricsFile: File, documentJsonStr: string, modelOption: string, taskId: string) => {
+  gradeByRubric: async (taskId: string, examFile: File, rubricFile: File, documentJsonStr: string, modelOption: string = 'Scorify Medium') => {
     const formData = new FormData();
-    formData.append('exam_file', examFile);
-    formData.append('rubrics_file', rubricsFile);
-    formData.append('document', documentJsonStr);
-    formData.append('model_option', modelOption);
     formData.append('task_id', taskId);
+    formData.append('model_option', modelOption);
+    formData.append('exam_file', examFile);
+    formData.append('rubrics_file', rubricFile);
+    formData.append('document', documentJsonStr);
 
     const response = await publicAxiosInstance.post('/gradings/rubrics', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      timeout: 300000,
-      validateStatus: (status) => status >= 200 && status < 300,
     });
-    return response;
+    return response.data; // { document_lines: [{ content, feedback, line_index, score }] }
   },
 };

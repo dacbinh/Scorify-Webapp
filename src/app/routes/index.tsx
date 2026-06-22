@@ -9,7 +9,7 @@ import { SubscriptionPage } from "../pages/subscription-page";
 import { useAuth } from "../context/AuthContext";
 
 import { TeacherLayout } from "../layouts/teacherLayout";
-import { WorkspacePage } from "../pages/Teacher/teacher-workspace-page";
+import { TeacherWorkspacePage } from "../pages/Teacher/teacher-workspace-page";
 import { PaymentPage } from "../pages/payment-page";
 import { RubricListPage } from "../pages/Teacher/rubric-list-page";
 import { CreateRubricPage } from "../pages/Teacher/create-rubric-page";
@@ -78,7 +78,7 @@ export function RouteCentral() {
           </ProtectedRoute>
         }
       >
-        <Route path="workspace" element={<WorkspacePage />} />
+        <Route path="workspace" element={<TeacherWorkspacePage />} />
         <Route path="profile/edit" element={<ProfileEditPage />} />
         <Route path="rubrics" element={<RubricListPage />} />
         <Route path="rubrics/create" element={<CreateRubricPage />} />
