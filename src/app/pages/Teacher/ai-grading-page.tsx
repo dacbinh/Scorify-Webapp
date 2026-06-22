@@ -30,7 +30,7 @@ import {
 } from "@/app/components/ui/collapsible";
 import { toast } from "sonner";
 import { supabaseClient } from "@/app/services/supabaseClient";
-import { documentEndpoints, gradingEndpoints } from "@/app/api/endpoints";
+import { documentEndpoints, gradingEndpoints, queueEndpoints } from "@/app/api/endpoints";
 
 // --- IMPORTS FOR LATEX RENDERING ---
 import ReactMarkdown from "react-markdown";
@@ -118,16 +118,17 @@ export function AIGradingPage() {
     return url;
   };
 
-  const getRubricPathFromExam = (examData: any) => {
-    if (examData?.rubricPath) return examData.rubricPath;
-
+  const getExamUrls = (examData: any) => {
     try {
-      if (!examData?.description) return null;
+      if (!examData?.description) return { rubricPath: null, examPath: null };
       const meta = JSON.parse(examData.description);
-      return getRubricPathFromUrl(meta.rubricUrl || null);
+      return {
+        rubricPath: getRubricPathFromUrl(meta.rubricUrl || null),
+        examPath: getRubricPathFromUrl(meta.examUrl || null)
+      };
     } catch (error) {
-      console.warn('Could not parse exam description JSON for rubric path', error);
-      return null;
+      console.warn('Could not parse exam description JSON for paths', error);
+      return { rubricPath: null, examPath: null };
     }
   };
 
@@ -157,10 +158,11 @@ export function AIGradingPage() {
 
         if (examError) throw examError;
 
-        const rubricPath = getRubricPathFromExam(examData);
+        const { rubricPath, examPath } = getExamUrls(examData);
         setExamInfo({
           ...examData,
-          rubricPath
+          rubricPath,
+          examPath
         });
 
         // Fetch Student
@@ -362,10 +364,11 @@ export function AIGradingPage() {
       return;
     }
 
-    const rubricPath = getRubricPathFromExam(examInfo);
+    const rubricPath = examInfo?.rubricPath;
+    const examPath = examInfo?.examPath;
 
-    if (!rubricPath) {
-      toast.error("Không tìm thấy rubric/đáp án để chấm điểm.");
+    if (!rubricPath || !examPath) {
+      toast.error("Không tìm thấy rubric hoặc đề bài để chấm điểm.");
       return;
     }
 
@@ -373,6 +376,21 @@ export function AIGradingPage() {
     toast.info("AI đang phân tích bố cục...", { id: "ai-grading" });
 
     try {
+      // Helper function for polling queue tasks
+      const pollTask = async (taskFn: () => Promise<any>, waitingMessage: string) => {
+        while (true) {
+          try {
+            return await taskFn();
+          } catch (err: any) {
+            if (err.response?.status === 401) {
+              throw new Error("Định dạng file không hợp lệ.");
+            }
+            toast.info(waitingMessage, { id: "ai-grading" });
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+        }
+      };
+
       // 1. Fetch the image file from the signed URL
       const response = await fetch(latestResultInfo.signed_url);
       const blob = await response.blob();
@@ -380,7 +398,15 @@ export function AIGradingPage() {
       const imageFile = new File([blob], `submission_${studentId}.${fileExt}`, { type: blob.type });
 
       // 2. Call /documents/detect to get LayoutDectectResponse
-      const detectResponse = await documentEndpoints.detectLayout(imageFile);
+      toast.info("Đang đăng ký vào hàng đợi hệ thống (phân tích bố cục)...", { id: "ai-grading" });
+      const detectQueueRes = await queueEndpoints.registerQueue();
+      const detectTaskId = detectQueueRes.data.task_id;
+
+      toast.info("AI đang phân tích bố cục...", { id: "ai-grading" });
+      const detectResponse = await pollTask(
+        () => documentEndpoints.detectLayout(detectTaskId, imageFile),
+        "Đang trong hàng đợi phân tích bố cục, vui lòng chờ..."
+      );
       const documentJsonStr = JSON.stringify(detectResponse);
       
       // Update UI with the intermediate detect layout if needed, though we immediately proceed to grading
@@ -392,9 +418,11 @@ export function AIGradingPage() {
       
       toast.info("AI đang đối chiếu Rubric & chấm điểm...", { id: "ai-grading" });
 
-      // 3. Fetch Rubric File from Supabase to send to the grading API
+      // 3. Fetch Rubric File and Exam File from Supabase to send to the grading API
       let rubricFile: File;
+      let examFile: File;
       try {
+        // Fetch Rubric
         const { data: rubricSignedData, error: rubricSignedError } = await supabaseClient.storage
           .from('Scorify_rubrics')
           .createSignedUrl(rubricPath, 3600);
@@ -406,12 +434,33 @@ export function AIGradingPage() {
         if (!rubricRes.ok) throw new Error(`Rubric fetch failed with status ${rubricRes.status}`);
         const rubricBlob = await rubricRes.blob();
         rubricFile = new File([rubricBlob], 'rubric.pdf', { type: rubricBlob.type });
+
+        // Fetch Exam
+        const { data: examSignedData, error: examSignedError } = await supabaseClient.storage
+          .from('Scorify_rubrics')
+          .createSignedUrl(examPath, 3600);
+
+        if (examSignedError) throw examSignedError;
+        if (!examSignedData?.signedUrl) throw new Error('Missing signed URL for exam file.');
+
+        const examRes = await fetch(examSignedData.signedUrl);
+        if (!examRes.ok) throw new Error(`Exam fetch failed with status ${examRes.status}`);
+        const examBlob = await examRes.blob();
+        examFile = new File([examBlob], 'exam.pdf', { type: examBlob.type });
+
       } catch (err) {
-        throw new Error("Không thể tải file rubric (đáp án) để chấm bài.");
+        throw new Error("Không thể tải file rubric hoặc đề bài để chấm bài.");
       }
 
-      // 4. Call /gradings/rubrics with Rubric file & Document JSON
-      const gradingResponse = await gradingEndpoints.gradeByRubric(rubricFile, documentJsonStr);
+      // 4. Call /gradings/rubrics with Exam file, Rubric file & Document JSON
+      toast.info("Đang đăng ký vào hàng đợi hệ thống (chấm điểm)...", { id: "ai-grading" });
+      const gradingQueueRes = await queueEndpoints.registerQueue();
+      const gradingTaskId = gradingQueueRes.data.task_id;
+
+      const gradingResponse = await pollTask(
+        () => gradingEndpoints.gradeByRubric(gradingTaskId, examFile, rubricFile, documentJsonStr),
+        "Đang trong hàng đợi chấm điểm, vui lòng chờ..."
+      );
 
       // The response is GradingAnalysisResponse which contains document_lines with scores and feedback
       const newLines = gradingResponse.document_lines || [];
@@ -621,6 +670,12 @@ export function AIGradingPage() {
         {/* ==================== RIGHT HALF: EVALUATION CONTROL SHEET ==================== */}
         <div className="bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-md relative">
           
+          <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+            <span className="text-[13px] font-bold text-slate-600 flex items-center gap-2 uppercase">
+              <Cpu className="size-4" /> Phân Tích Chi Tiết
+            </span>
+          </div>
+
           {/* Overlay loading spinner when grading */}
           {isGrading && (
             <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center">
@@ -632,67 +687,8 @@ export function AIGradingPage() {
             </div>
           )}
 
-          {/* Metrics Telemetry HUD Block */}
-          <Collapsible open={isSummaryExpanded} onOpenChange={setIsSummaryExpanded}>
-            <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-3">
-              <CollapsibleTrigger asChild>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition-colors hover:bg-slate-50"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Tổng quan chấm</div>
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <span className="text-xl font-black text-indigo-600 leading-none">
-                        {evaluation?.totalScore || 0}
-                        <span className="ml-1 text-xs font-medium text-slate-400">/ {examInfo?.max_score || 10}</span>
-                      </span>
-                      {hasAIFeedback ? (
-                        <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-200 font-bold text-[10px] gap-1">
-                          <CheckCircle2 className="size-3.5" /> Đã phân tích
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-amber-50 text-amber-600 border border-amber-200 font-bold text-[10px] gap-1">
-                          <AlertTriangle className="size-3.5" /> Chưa chấm
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <ChevronDown className={`size-4 shrink-0 text-slate-400 transition-transform ${isSummaryExpanded ? "rotate-180" : ""}`} />
-                </button>
-              </CollapsibleTrigger>
-
-              <CollapsibleContent className="pt-3">
-                <div className="flex items-center justify-evenly rounded-xl border border-slate-200 bg-white p-4">
-                  <div className="flex flex-col items-center flex-1">
-                    <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wide block mb-1">
-                      Điểm Tổng Kết
-                    </span>
-                    <div className="text-2xl font-black text-indigo-600">
-                      {evaluation?.totalScore || 0}{" "}
-                      <span className="text-xs text-slate-400 font-medium">/ {examInfo?.max_score || 10}</span>
-                    </div>
-                  </div>
-                  <div className="w-px h-8 bg-slate-200" />
-                  <div className="flex flex-col items-center flex-1">
-                    <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wide block mb-1">
-                      Trạng thái AI
-                    </span>
-                    <div className="text-xs font-bold mt-1">
-                      {hasAIFeedback ? (
-                        <span className="text-emerald-600 flex items-center gap-1"><CheckCircle2 className="size-3.5" /> Đã phân tích</span>
-                      ) : (
-                        <span className="text-amber-500 flex items-center gap-1"><AlertTriangle className="size-3.5" /> Chưa chấm</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </div>
-          </Collapsible>
-
           {/* Scrollable Criteria Scoring Checklist Container */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
             {!hasAIFeedback ? (
               <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4 py-20">
                 <Cpu className="size-12 opacity-20" />
@@ -709,74 +705,149 @@ export function AIGradingPage() {
               </div>
             ) : (
               <>
-                {evaluation.document_lines.map((item: any, index: number) => (
-                  <div
-                    key={index}
-                    className={`p-6 rounded-2xl border-2 transition-all duration-200 ${
-                      item.isOverridden
-                        ? "bg-amber-50/40 border-amber-200 shadow-sm"
-                        : "bg-white border-slate-100 hover:border-slate-200"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-slate-500 text-xs uppercase tracking-wider mb-2">
-                          Dòng {item.line_index !== undefined ? item.line_index + 1 : index + 1}
-                        </h4>
-                        <div className="text-sm font-semibold text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                          <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                            {item.content || `Tiêu chí ${index + 1}`}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0 bg-slate-100 p-1.5 rounded-xl border border-slate-200 mt-6">
-                        <Input
-                          type="number"
-                          step="0.25"
-                          value={item.score || 0}
-                          onChange={(e) => handleScoreChange(index, e.target.value)}
-                          className="w-16 h-9 px-2 text-center text-lg font-black text-indigo-600 bg-white rounded-lg border-0 shadow-inner"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="relative mt-2">
-                      {editingLineIndex === index ? (
-                        <Textarea
-                          autoFocus
-                          value={item.feedback || ""}
-                          onChange={(e) => handleFeedbackChange(index, e.target.value)}
-                          onBlur={() => setEditingLineIndex(null)}
-                          className="text-base leading-relaxed text-slate-700 p-4 min-h-[120px] rounded-xl border-2 border-indigo-500 bg-white shadow-lg"
-                        />
-                      ) : (
-                        <div
-                          onClick={() => setEditingLineIndex(index)}
-                          className="text-base leading-relaxed text-slate-700 p-4 min-h-[100px] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/30 cursor-pointer hover:bg-slate-50 hover:border-indigo-200 transition-all prose prose-slate max-w-none"       
-                        >
-                          <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                            {item.feedback || "*Nhấp để thêm nhận xét...*"}
-                          </ReactMarkdown>
-                        </div>
-                      )}
-
-                      <div className="absolute right-3 bottom-3 text-slate-300">
-                        {item.isOverridden ? (
-                          <Edit3 className="size-4 text-amber-500" />
-                        ) : (
-                          <Cpu className="size-4" />
-                        )}
-                      </div>
+                {/* Summary Score Bar */}
+                <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-xl p-4 flex justify-between items-center shadow-sm">
+                  <div>
+                    <div className="text-[12px] text-slate-500 font-bold uppercase tracking-wide mb-1">Điểm Tổng Kết</div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-[28px] font-black text-indigo-500 leading-none">{evaluation?.totalScore || 0}</span>
+                      <span className="text-[15px] font-medium text-slate-500">/ {examInfo?.max_score || 10}</span>
                     </div>
                   </div>
-                ))}
+                  <div className="bg-sky-50 text-sky-700 px-3.5 py-1.5 rounded-full text-[13px] font-bold flex items-center gap-1.5 border border-sky-100">
+                    <CheckCircle2 className="size-4" /> Đã phân tích
+                  </div>
+                </div>
+
+                {evaluation.document_lines.map((item: any, index: number) => {
+                  // Determine card status color based on score
+                  const isWarning = item.score === 0;
+                  const isSuccess = item.score > 0;
+
+                  return (
+                    <div
+                      key={index}
+                      className={`rounded-[10px] border overflow-hidden shrink-0 transition-all duration-200 ${
+                        isSuccess
+                          ? "border-emerald-200"
+                          : item.isOverridden || isWarning
+                            ? "border-amber-200"
+                            : "border-slate-200"
+                      }`}
+                    >
+                      {/* Card header: "Dòng N" label + score badge */}
+                      <div className={`px-4 py-2.5 flex items-center justify-between gap-3 border-b ${
+                        isWarning
+                          ? "bg-amber-50 border-amber-200"
+                          : isSuccess
+                            ? "bg-emerald-50 border-emerald-200"
+                            : "bg-slate-50 border-slate-200"
+                      }`}>
+                        <div className="flex items-center gap-2.5">
+                          <span className={`text-[11px] font-bold uppercase px-2 py-0.5 rounded ${
+                            isWarning
+                              ? "bg-amber-200 text-amber-800"
+                              : isSuccess
+                                ? "bg-emerald-200 text-emerald-800"
+                                : "bg-slate-200 text-slate-600"
+                          }`}>
+                            Dòng {item.line_index !== undefined ? item.line_index + 1 : index + 1}
+                          </span>
+                          {item.isOverridden && (
+                            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
+                              Đã chỉnh sửa
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Stepper score control: − | value | + (reference: scores-button.html) */}
+                        <div className={`flex items-center bg-white rounded-lg p-1 shadow-sm transition-all ${
+                          isSuccess
+                            ? "border border-indigo-200"
+                            : "border border-slate-200"
+                        }`}>
+                          {/* Decrement button */}
+                          <button
+                            type="button"
+                            onClick={() => handleScoreChange(index, String(Math.max(0, (item.score ?? 0) - 0.25)))}
+                            className={`w-7 h-7 flex items-center justify-center rounded-md text-base font-bold transition-all active:scale-95 ${
+                              isSuccess
+                                ? "text-indigo-600 hover:bg-indigo-50"
+                                : "text-slate-400 hover:bg-slate-100"
+                            }`}
+                          >
+                            &minus;
+                          </button>
+                          {/* Score number input */}
+                          <input
+                            type="number"
+                            step="0.25"
+                            min={0}
+                            value={item.score ?? 0}
+                            onChange={(e) => handleScoreChange(index, e.target.value)}
+                            className={`w-12 text-center font-bold text-sm focus:outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                              isSuccess ? "text-indigo-700" : "text-slate-500"
+                            }`}
+                          />
+                          {/* Increment button */}
+                          <button
+                            type="button"
+                            onClick={() => handleScoreChange(index, String((item.score ?? 0) + 0.25))}
+                            className={`w-7 h-7 flex items-center justify-center rounded-md text-base font-bold transition-all active:scale-95 ${
+                              isSuccess
+                                ? "text-indigo-600 hover:bg-indigo-50"
+                                : "text-slate-400 hover:bg-slate-100"
+                            }`}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Content (step title rendered as markdown) */}
+                      <div className="px-4 pt-3 pb-2 text-sm font-semibold text-slate-800 prose prose-sm max-w-none border-b border-slate-100">
+                        <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                          {item.content || `Tiêu chí ${index + 1}`}
+                        </ReactMarkdown>
+                      </div>
+
+                      {/* Feedback body (editable markdown) */}
+                      <div className="relative px-4 py-3 bg-white">
+                        {editingLineIndex === index ? (
+                          <Textarea
+                            autoFocus
+                            value={item.feedback || ""}
+                            onChange={(e) => handleFeedbackChange(index, e.target.value)}
+                            onBlur={() => setEditingLineIndex(null)}
+                            className="text-sm leading-relaxed p-3 min-h-[90px] w-full rounded-lg border border-indigo-300 bg-white shadow-sm focus-visible:ring-1 focus-visible:ring-indigo-500"
+                          />
+                        ) : (
+                          <div
+                            onClick={() => setEditingLineIndex(index)}
+                            className="cursor-pointer prose prose-sm max-w-none min-h-[48px] hover:opacity-70 transition-opacity"
+                          >
+                            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                              {item.feedback || "*Nhấp để thêm nhận xét...*"}
+                            </ReactMarkdown>
+                          </div>
+                        )}
+
+                        {/* Source indicator */}
+                        <div className="absolute right-2 bottom-2 pointer-events-none">
+                          {item.isOverridden
+                            ? <Edit3 className="size-3.5 text-amber-400" />
+                            : <Cpu className="size-3.5 text-slate-300" />
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
 
                 {/* Global General Summary */}
-                <div className="pt-6 border-t-2 border-slate-100 mt-8">
-                  <label className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <MessageSquare className="size-4 text-indigo-500" /> Nhận xét
-                    tổng quát
+                <div className="pt-6 border-t border-slate-200 mt-4">
+                  <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <MessageSquare className="size-3.5 text-indigo-500" /> Nhận xét tổng quát
                   </label>
 
                   <div className="relative">
@@ -791,12 +862,12 @@ export function AIGradingPage() {
                           })
                         }
                         onBlur={() => setEditingGeneral(false)}
-                        className="text-base leading-relaxed text-slate-700 p-5 min-h-[150px] rounded-2xl border-2 border-indigo-500"    
+                        className="text-[14px] leading-relaxed text-slate-700 p-4 min-h-[120px] rounded-xl border border-indigo-300 bg-white shadow-sm focus-visible:ring-1 focus-visible:ring-indigo-500"    
                       />
                     ) : (
                       <div
                         onClick={() => setEditingGeneral(true)}
-                        className="text-base leading-relaxed text-slate-700 p-5 min-h-[120px] rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/30 cursor-pointer hover:bg-white transition-all prose prose-indigo max-w-none"
+                        className="text-[14px] leading-relaxed text-slate-700 p-4 min-h-[100px] rounded-xl border border-dashed border-slate-300 bg-slate-50/50 cursor-pointer hover:bg-slate-50 hover:border-indigo-300 transition-all prose prose-sm max-w-none"
                       >
                         <ReactMarkdown
                           remarkPlugins={[remarkMath]}
