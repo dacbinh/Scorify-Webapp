@@ -1,29 +1,33 @@
-// src/app/layouts/teacherLayout.tsx
+// src/app/layouts/adminLayout.tsx
 
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
-  Binary,
-  Wallet,
+  Users,
+  Cpu,
+  CreditCard,
   Settings,
   Bell,
   GraduationCap,
-  School,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
-export function TeacherLayout() {
+export function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { profile, subscription, loading, logout } = useAuth();
+  const { profile, loading, logout } = useAuth();
 
   const navItems = [
-    { icon: LayoutDashboard, path: "/workspace", label: "Tổng quan" },
-    { icon: Binary, path: "/rubrics", label: "Quản lý bài tập" },
-    { icon: School, path: "/classrooms", label: "Lớp học & Bài tập" },
-    { icon: Wallet, path: "/workspace/pricing", label: "Gói dịch vụ" },
+    {
+      icon: LayoutDashboard,
+      path: "/admin/dashboard",
+      label: "Tổng quan hệ thống",
+    },
+    { icon: Users, path: "/admin/users", label: "Quản lý người dùng" },
+    { icon: Cpu, path: "/admin/ai-metrics", label: "Giám sát AI & Chi phí" },
+    { icon: CreditCard, path: "/admin/billing", label: "Doanh thu & Hóa đơn" },
   ];
 
   const handleLogout = async () => {
@@ -40,10 +44,10 @@ export function TeacherLayout() {
       <aside className="w-[92px] flex flex-col items-center py-6 justify-between shrink-0 z-20">
         <div className="flex flex-col items-center w-full">
           <Link
-            to="/workspace"
+            to="/admin/dashboard"
             className="relative flex items-center justify-center w-12 h-12 mb-8 group"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-md shadow-orange-950/40" />
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-md shadow-indigo-950/40" />
             <div className="relative text-white">
               <GraduationCap className="size-6 stroke-[2.5]" />
             </div>
@@ -54,8 +58,8 @@ export function TeacherLayout() {
             {navItems.map((item, idx) => {
               const Icon = item.icon;
               const isActive =
-                item.path === "/workspace"
-                  ? location.pathname === "/workspace"
+                item.path === "/admin/dashboard"
+                  ? location.pathname === "/admin/dashboard"
                   : location.pathname.startsWith(item.path);
 
               return (
@@ -90,21 +94,21 @@ export function TeacherLayout() {
 
         <div className="flex flex-col items-center gap-4 w-full px-3">
           <Link
-            to="/settings"
+            to="/admin/settings"
             className={`w-full h-14 relative flex items-center justify-center rounded-l-2xl transition-all duration-200 group ${
-              location.pathname === "/settings"
+              location.pathname === "/admin/settings"
                 ? "bg-[#F8FAFC] text-indigo-600"
                 : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
             }`}
           >
-            {location.pathname === "/settings" && (
+            {location.pathname === "/admin/settings" && (
               <>
                 <div className="absolute right-0 -top-4 w-4 h-4 bg-[#F8FAFC] pointer-events-none z-10 before:content-[''] before:absolute before:inset-0 before:bg-[#111A2E] before:rounded-br-xl" />
                 <div className="absolute right-0 -bottom-4 w-4 h-4 bg-[#F8FAFC] pointer-events-none z-10 before:content-[''] before:absolute before:inset-0 before:bg-[#111A2E] before:rounded-tr-xl" />
               </>
             )}
             <div
-              className={`p-2.5 rounded-xl flex items-center justify-center ${location.pathname === "/settings" ? "bg-indigo-50" : ""}`}
+              className={`p-2.5 rounded-xl flex items-center justify-center ${location.pathname === "/admin/settings" ? "bg-indigo-50" : ""}`}
             >
               <Settings className="size-5 group-hover:rotate-45 transition-transform duration-300" />
             </div>
@@ -124,8 +128,8 @@ export function TeacherLayout() {
         <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-8 z-10">
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Scorify AI — Gói {subscription?.plan_name || "Cơ Bản (Free)"}
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+              Scorify AI — Bảng điều khiển Quản trị viên (Admin)
             </span>
           </div>
 
@@ -136,15 +140,15 @@ export function TeacherLayout() {
             </button>
 
             <Link
-              to="/profile/edit"
+              to="/admin/profile"
               className="flex items-center gap-3 border-l border-slate-100 pl-4 group"
             >
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">
-                  {profile?.name || "Người dùng Scorify"}
+                  {profile?.name || "Quản trị viên"}
                 </p>
-                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-                  Hồ sơ của tôi
+                <p className="text-[10px] font-medium text-indigo-500 uppercase tracking-wider">
+                  Hệ thống Root
                 </p>
               </div>
 
@@ -158,7 +162,7 @@ export function TeacherLayout() {
                 <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#111A2E] to-[#22314E] text-white flex items-center justify-center font-bold text-sm shadow-inner group-hover:scale-105 transition-transform">
                   {profile?.name
                     ? profile.name.substring(0, 2).toUpperCase()
-                    : "SC"}
+                    : "AD"}
                 </div>
               )}
             </Link>

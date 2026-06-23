@@ -60,7 +60,7 @@ export function RubricListPage() {
 
   useEffect(() => {
     fetchExams();
-  }, [user]);
+  }, [user?.id]);
 
   // Handle Duplicate Feature for Exam
   const handleDuplicate = async (targetExam: any) => {
