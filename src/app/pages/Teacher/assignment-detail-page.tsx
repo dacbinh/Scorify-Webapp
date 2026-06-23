@@ -674,7 +674,7 @@ export function AssignmentDetailPage() {
                   </TableCell>
                   <TableCell className="text-center">
                     {stu.result ? (
-                      stu.result.score > 0 ? (
+                      stu.result.graded_at ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                           <CheckCircle2 className="size-2.5" />
                           Đã chấm xong
@@ -692,7 +692,7 @@ export function AssignmentDetailPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {stu.result && stu.result.score > 0 ? (
+                    {stu.result && stu.result.graded_at ? (
                       <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                         {stu.result.score?.toFixed(1)} / {exam.max_score}
                       </span>
