@@ -295,7 +295,7 @@ export function ClassroomDetailScreen() {
       const concurrency = 5;
       const executing = new Set<Promise<any>>();
       for (const sub of pendingSubmissions) {
-        //if (!isBulkGradingOpen) break; // simplistic way to stop if closed
+        if (!isBulkGradingOpen) break; // simplistic way to stop if closed
         const p = Promise.resolve().then(() => processSubmission(sub));
         executing.add(p);
         const clean = () => executing.delete(p);
