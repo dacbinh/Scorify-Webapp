@@ -20,7 +20,9 @@ import { CreateAssignmentPage } from "../pages/Teacher/create-assignment-page";
 import { ClassroomDetailScreen } from "../pages/Teacher/classroom-detail-page";
 import { AIGradingPage } from "../pages/Teacher/ai-grading-page";
 import { ProfileEditPage } from "../pages/Teacher/profile-edit-page";
-import { AdminLayout } from "../layouts/admin-layout";
+import { AdminLayout } from "../layouts/adminLayout";
+import AdminDashboardPage from "../pages/Admin/admin-dashboard-page";
+import UserManagementPage from "../pages/Admin/user-management-page";
 
 function ProtectedRoute({
   children,
@@ -49,7 +51,7 @@ function ProtectedRoute({
   if (currentRole !== allowedRole) {
     return (
       <Navigate
-        to={currentRole === "admin" ? "/admin" : "/workspace"}
+        to={currentRole === "admin" ? "/admin/dashboard" : "/workspace"}
         replace
       />
     );
@@ -106,13 +108,18 @@ export function RouteCentral() {
 
       {/* 3. Admin Protected Routes*/}
       <Route
-        path="/"
+        path="/admin"
         element={
           <ProtectedRoute allowedRole="admin">
             <AdminLayout />
           </ProtectedRoute>
         }
-      ></Route>
+      >
+        <Route path="dashboard" element={<AdminDashboardPage />} />
+        <Route path="users" element={<UserManagementPage />} />
+
+        <Route path="*" element={<Navigate to="dashboard" replace />} />
+      </Route>
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

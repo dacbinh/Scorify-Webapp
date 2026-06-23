@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { GraduationCap, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { authService } from "@/app/services/authService";
 import { toast } from "sonner";
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from "../context/AuthContext";
 
 interface LoginErrors {
   emailOrPhone?: string;
@@ -53,21 +53,43 @@ export function LoginPage() {
       return;
     }
 
-    setIsLoading(true);
+    // setIsLoading(true);
 
     try {
+      setIsLoading(true);
+
       await authService.login({
         emailOrPhone: input,
         password: formData.password,
       });
 
-      await refreshSession();
+      // 1. Force the auth context to pull down the database profile immediately
+      const freshContext = await refreshSession();
 
       toast.success("Đăng nhập thành công! Chuyển hướng...");
 
+      // 2. Fetch the true loaded profile instead of guessing
+      // We add a tiny delay to let the state fully hydrate or we read directly from what refreshSession updates
       setTimeout(() => {
-        navigate("/workspace", { replace: true });
-      }, 50);
+        // We can read local storage safely here if context profile state update is scheduled
+        const localUserStr = localStorage.getItem("scorify_user");
+        let detectedRole = "teacher";
+
+        try {
+          if (localUserStr) {
+            const parsed = JSON.parse(localUserStr);
+            detectedRole =
+              parsed.user_metadata?.role || parsed.role || "teacher";
+          }
+        } catch (e) {}
+
+        // Redirect to the exact home base matching their role
+        if (detectedRole === "admin") {
+          navigate("/admin/dashboard", { replace: true });
+        } else {
+          navigate("/workspace", { replace: true });
+        }
+      }, 100);
     } catch (err: any) {
       setIsLoading(false);
       console.error("Raw login block error:", err);

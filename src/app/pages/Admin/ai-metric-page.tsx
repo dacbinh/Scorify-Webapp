@@ -1,0 +1,1 @@
+// src/app/pages/Admin/ai-metric-page.tsx
