@@ -43,6 +43,7 @@ interface AIActivityLog {
   assignmentName: string;
   score: string;
   feedback: string;
+  gradedAt: string;
 }
 
 interface DocumentLine {
@@ -142,7 +143,7 @@ function BeautifulFeedback({ feedback }: { feedback: string }) {
   }
 }
 
-export function WorkspacePage() {
+export function TeacherWorkspacePage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
 
@@ -158,6 +159,7 @@ export function WorkspacePage() {
   const [recentAIActivities, setRecentAIActivities] = useState<AIActivityLog[]>(
     [],
   );
+  const [loadingActivities, setLoadingActivities] = useState(true);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -215,14 +217,17 @@ export function WorkspacePage() {
             .from("exam_result")
             .select(
               `
-              exam_result_id,
               score,
               feedback,
               graded_at,
-              student:student_id(full_name),
-              exam:exam_id(exam_name, created_by)
+              student:student_id (full_name),
+              exam!inner (
+                exam_name,
+                created_by
+              )
             `,
             )
+            .eq("exam.created_by", user.id)
             .eq("exam.created_by", user.id)
             .not("score", "is", null)
             .order("graded_at", { ascending: false })
@@ -250,20 +255,20 @@ export function WorkspacePage() {
 
         // 4. Mapping Activity Feed Log rows
         if (activitiesDataRes.data) {
-          const mappedActivities = activitiesDataRes.data.map((res: any) => ({
-            studentName: res.student?.full_name || "Học sinh ẩn danh",
-            assignmentName: res.exam?.exam_name || "Bài tập không tên",
-            score:
-              res.score !== undefined && res.score !== null
-                ? `${res.score}/10`
-                : "Chưa chấm",
-            feedback: res.feedback || "Không có nhận xét tự động từ hệ thống.",
-          }));
+          const mappedActivities = activitiesDataRes.data
+            .filter((res: any) => res.exam?.created_by === user.id) // extra client-side safety
+            .map((res: any) => ({
+              studentName: res.student?.full_name || "Học sinh ẩn danh",
+              assignmentName: res.exam?.exam_name || "Bài tập không tên",
+              score:
+                res.score !== undefined && res.score !== null
+                  ? `${res.score}/10`
+                  : "Chưa chấm",
+              feedback:
+                res.feedback || "Không có nhận xét tự động từ hệ thống.",
+              gradedAt: res.graded_at,
+            }));
           setRecentAIActivities(mappedActivities);
-          console.log(
-            "Recent AI gradings: ",
-            JSON.stringify(mappedActivities, null, 2),
-          );
         }
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu màn hình chính:", error);
