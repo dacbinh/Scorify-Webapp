@@ -1,5 +1,5 @@
 // src/app/pages/Teacher/classroom-detail-screen.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -71,6 +71,21 @@ export function ClassroomDetailScreen() {
   const [bulkGradingStatus, setBulkGradingStatus] = useState<"idle" | "grading" | "success" | "error">("idle");
   const [bulkGradingProgress, setBulkGradingProgress] = useState({ total: 0, current: 0 });
   const [bulkGradingMessage, setBulkGradingMessage] = useState("");
+
+  const isBulkGradingOpenRef = useRef(isBulkGradingOpen);
+  useEffect(() => {
+    isBulkGradingOpenRef.current = isBulkGradingOpen;
+  }, [isBulkGradingOpen]);
+
+  const handleOpenChangeBulkGrading = (open: boolean) => {
+    if (bulkGradingStatus === "grading") {
+      return;
+    }
+    setIsBulkGradingOpen(open);
+    if (!open) {
+      localStorage.removeItem("scorify_bulk_grading_state");
+    }
+  };
 
   const fetchClassroomData = async () => {
     if (!classId || !user) return;
@@ -181,16 +196,25 @@ export function ClassroomDetailScreen() {
     }
   };
 
-  const handleStartBulkGrading = async () => {
-    if (!selectedAssignment) return;
+  const handleStartBulkGrading = async (assignmentToGrade = selectedAssignment) => {
+    if (!assignmentToGrade) return;
     setBulkGradingStatus("grading");
     setBulkGradingMessage("Đang lấy danh sách bài làm cần chấm...");
+
+    // Store initial grading state
+    localStorage.setItem("scorify_bulk_grading_state", JSON.stringify({
+      classId,
+      assignment: assignmentToGrade,
+      status: "grading",
+      progress: { total: 0, current: 0 },
+      message: "Đang lấy danh sách bài làm cần chấm..."
+    }));
 
     try {
       const { data: resultsData, error: resultsError } = await supabaseClient
         .from('exam_result')
         .select('*')
-        .eq('exam_id', selectedAssignment.exam_id)
+        .eq('exam_id', assignmentToGrade.exam_id)
         .not('signed_url', 'is', null);
 
       if (resultsError) throw resultsError;
@@ -207,16 +231,30 @@ export function ClassroomDetailScreen() {
       if (pendingSubmissions.length === 0) {
         setBulkGradingStatus("success");
         setBulkGradingMessage("Không có bài làm nào cần chấm!");
+        localStorage.setItem("scorify_bulk_grading_state", JSON.stringify({
+          classId,
+          assignment: assignmentToGrade,
+          status: "success",
+          progress: { total: 0, current: 0 },
+          message: "Không có bài làm nào cần chấm!"
+        }));
         return;
       }
 
       setBulkGradingProgress({ total: pendingSubmissions.length, current: 0 });
       setBulkGradingMessage("Đang chuẩn bị Rubric và Đề thi...");
+      localStorage.setItem("scorify_bulk_grading_state", JSON.stringify({
+        classId,
+        assignment: assignmentToGrade,
+        status: "grading",
+        progress: { total: pendingSubmissions.length, current: 0 },
+        message: "Đang chuẩn bị Rubric và Đề thi..."
+      }));
 
       let rubricPath: string | null = null;
       let examPath: string | null = null;
       try {
-        const meta = JSON.parse(selectedAssignment.description);
+        const meta = JSON.parse(assignmentToGrade.description);
         rubricPath = getRubricPathFromUrl(meta.rubricUrl || null);
         examPath = getRubricPathFromUrl(meta.examUrl || null);
       } catch {}
@@ -241,6 +279,13 @@ export function ClassroomDetailScreen() {
       const examFile = new File([examBlob], 'exam.pdf', { type: examBlob.type });
 
       setBulkGradingMessage("Bắt đầu chấm AI...");
+      localStorage.setItem("scorify_bulk_grading_state", JSON.stringify({
+        classId,
+        assignment: assignmentToGrade,
+        status: "grading",
+        progress: { total: pendingSubmissions.length, current: 0 },
+        message: "Bắt đầu chấm AI..."
+      }));
       let completedCount = 0;
       
       const processSubmission = async (submission: any) => {
@@ -288,14 +333,24 @@ export function ClassroomDetailScreen() {
           console.error("Lỗi chấm submission", submission.exam_result_id, e);
         } finally {
           completedCount++;
-          setBulkGradingProgress(prev => ({ ...prev, current: completedCount }));
+          setBulkGradingProgress(prev => {
+            const next = { ...prev, current: completedCount };
+            localStorage.setItem("scorify_bulk_grading_state", JSON.stringify({
+              classId,
+              assignment: assignmentToGrade,
+              status: "grading",
+              progress: next,
+              message: "Bắt đầu chấm AI..."
+            }));
+            return next;
+          });
         }
       };
 
       const concurrency = 5;
       const executing = new Set<Promise<any>>();
       for (const sub of pendingSubmissions) {
-        if (!isBulkGradingOpen) break; // simplistic way to stop if closed
+        if (!isBulkGradingOpenRef.current) break; // check ref to stop if closed
         const p = Promise.resolve().then(() => processSubmission(sub));
         executing.add(p);
         const clean = () => executing.delete(p);
@@ -308,13 +363,53 @@ export function ClassroomDetailScreen() {
 
       setBulkGradingStatus("success");
       setBulkGradingMessage("Đã chấm xong hàng loạt!");
+      localStorage.setItem("scorify_bulk_grading_state", JSON.stringify({
+        classId,
+        assignment: assignmentToGrade,
+        status: "success",
+        progress: { total: pendingSubmissions.length, current: pendingSubmissions.length },
+        message: "Đã chấm xong hàng loạt!"
+      }));
 
     } catch (err: any) {
       console.error(err);
       setBulkGradingStatus("error");
       setBulkGradingMessage("Lỗi: " + err.message);
+      localStorage.setItem("scorify_bulk_grading_state", JSON.stringify({
+        classId,
+        assignment: assignmentToGrade,
+        status: "error",
+        progress: bulkGradingProgress,
+        message: "Lỗi: " + err.message
+      }));
     }
   };
+
+  // Resume bulk grading if page reload occurs during grading
+  useEffect(() => {
+    if (!loading && classId) {
+      const savedStateStr = localStorage.getItem("scorify_bulk_grading_state");
+      if (savedStateStr) {
+        try {
+          const savedState = JSON.parse(savedStateStr);
+          if (savedState.classId === classId && savedState.assignment) {
+            setSelectedAssignment(savedState.assignment);
+            setIsBulkGradingOpen(true);
+            setBulkGradingStatus(savedState.status);
+            setBulkGradingProgress(savedState.progress || { total: 0, current: 0 });
+            setBulkGradingMessage(savedState.message || "");
+            
+            if (savedState.status === "grading") {
+              handleStartBulkGrading(savedState.assignment);
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing saved bulk grading state:", e);
+          localStorage.removeItem("scorify_bulk_grading_state");
+        }
+      }
+    }
+  }, [loading, classId]);
 
   const handleAddStudentManual = async () => {
     if (!newStudentName.trim()) {
@@ -774,7 +869,7 @@ export function ClassroomDetailScreen() {
       </Dialog>
 
       {/* DIALOG BULK GRADING */}
-      <Dialog open={isBulkGradingOpen} onOpenChange={setIsBulkGradingOpen}>
+      <Dialog open={isBulkGradingOpen} onOpenChange={handleOpenChangeBulkGrading}>
         <DialogContent className="rounded-2xl max-w-md p-6 bg-white">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -821,7 +916,7 @@ export function ClassroomDetailScreen() {
             )}
           </div>
           <DialogFooter className="mt-2 border-t border-slate-50 pt-4">
-            <Button variant="ghost" onClick={() => setIsBulkGradingOpen(false)} className="text-xs font-bold h-9" disabled={bulkGradingStatus === "grading"}>
+            <Button variant="ghost" onClick={() => handleOpenChangeBulkGrading(false)} className="text-xs font-bold h-9" disabled={bulkGradingStatus === "grading"}>
               Đóng
             </Button>
             {bulkGradingStatus === "idle" && (
