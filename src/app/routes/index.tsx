@@ -11,16 +11,18 @@ import { useAuth } from "../context/AuthContext";
 import { TeacherLayout } from "../layouts/teacherLayout";
 import { TeacherWorkspacePage } from "../pages/Teacher/teacher-workspace-page";
 import { PaymentPage } from "../pages/payment-page";
-import { RubricListPage } from "../pages/Teacher/rubric-list-page";
-import { CreateRubricPage } from "../pages/Teacher/create-rubric-page";
-import { RubricDetailPage } from "../pages/Teacher/rubric-detail-page";
+import { AssignmentListPage } from "../pages/Teacher/assignment-list-page";
+import { CreateExamPage } from "../pages/Teacher/create-exam-page";
+import { ExamDetailPage } from "../pages/Teacher/exam-detail-page";
 import { ClassroomListPage } from "../pages/Teacher/classroom-list-page";
 import { AssignmentDetailPage } from "../pages/Teacher/assignment-detail-page";
 import { CreateAssignmentPage } from "../pages/Teacher/create-assignment-page";
 import { ClassroomDetailScreen } from "../pages/Teacher/classroom-detail-page";
 import { AIGradingPage } from "../pages/Teacher/ai-grading-page";
 import { ProfileEditPage } from "../pages/Teacher/profile-edit-page";
-import { AdminLayout } from "../layouts/admin-layout";
+import { AdminLayout } from "../layouts/adminLayout";
+import AdminDashboardPage from "../pages/Admin/admin-dashboard-page";
+import UserManagementPage from "../pages/Admin/user-management-page";
 
 function ProtectedRoute({
   children,
@@ -49,7 +51,7 @@ function ProtectedRoute({
   if (currentRole !== allowedRole) {
     return (
       <Navigate
-        to={currentRole === "admin" ? "/admin" : "/workspace"}
+        to={currentRole === "admin" ? "/admin/dashboard" : "/workspace"}
         replace
       />
     );
@@ -80,10 +82,10 @@ export function RouteCentral() {
       >
         <Route path="workspace" element={<TeacherWorkspacePage />} />
         <Route path="profile/edit" element={<ProfileEditPage />} />
-        <Route path="rubrics" element={<RubricListPage />} />
-        <Route path="rubrics/create" element={<CreateRubricPage />} />
-        <Route path="rubrics/:id" element={<RubricDetailPage />} />
-        <Route path="rubrics/:id/edit" element={<CreateRubricPage />} />
+        <Route path="rubrics" element={<AssignmentListPage />} />
+        <Route path="rubrics/create" element={<CreateExamPage />} />
+        <Route path="rubrics/:id" element={<ExamDetailPage />} />
+        <Route path="rubrics/:id/edit" element={<CreateExamPage />} />
         <Route path="classrooms" element={<ClassroomListPage />} />
         <Route path="classrooms/:classId" element={<ClassroomDetailScreen />} />
         <Route
@@ -106,13 +108,18 @@ export function RouteCentral() {
 
       {/* 3. Admin Protected Routes*/}
       <Route
-        path="/"
+        path="/admin"
         element={
           <ProtectedRoute allowedRole="admin">
             <AdminLayout />
           </ProtectedRoute>
         }
-      ></Route>
+      >
+        <Route path="dashboard" element={<AdminDashboardPage />} />
+        <Route path="users" element={<UserManagementPage />} />
+
+        <Route path="*" element={<Navigate to="dashboard" replace />} />
+      </Route>
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

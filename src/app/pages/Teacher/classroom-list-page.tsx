@@ -78,7 +78,7 @@ export function ClassroomListPage() {
 
   useEffect(() => {
     fetchClassrooms();
-  }, [user]);
+  }, [user?.id]); // KILL YOURSELFKILL YOURSELFKILL YOURSELFKILL YOURSELFKILL YOURSELF
 
   const handleCreateClass = async () => {
     if (!newClassName.trim()) {

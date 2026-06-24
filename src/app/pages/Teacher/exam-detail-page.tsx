@@ -36,7 +36,7 @@ import {
 import { supabaseClient } from "@/app/services/supabaseClient";
 import { toast } from "sonner";
 
-export function RubricDetailPage() {
+export function ExamDetailPage() {
   const { id: examId } = useParams();
   const navigate = useNavigate();
   
@@ -71,11 +71,9 @@ export function RubricDetailPage() {
             if (examData.description) {
               const meta = JSON.parse(examData.description);
               // Extract the path from the URL or store path directly
-              // For Supabase Storage, the path is usually after 'public/Scorify_rubrics/' or just stored as path
               const getPathFromUrl = (url: string | null) => {
                 if (!url) return null;
                 try {
-                  // Standard format: .../storage/v1/object/public/Scorify_rubrics/path/to/file
                   if (url.includes('Scorify_rubrics/')) {
                     return url.split('Scorify_rubrics/')[1];
                   }
@@ -130,14 +128,12 @@ export function RubricDetailPage() {
       setIsGeneratingUrl(true);
       console.log("Generating signed URL for path:", filePath);
 
-      // Create a signed URL valid for 1 hour (3600 seconds)
       const { data, error } = await supabaseClient.storage
         .from('Scorify_rubrics')
         .createSignedUrl(filePath, 3600);
 
       if (error) {
         console.error("Signed URL error:", error);
-        // Fallback: try public URL if signed fails (for debugging)
         const { data: publicData } = supabaseClient.storage
           .from('Scorify_rubrics')
           .getPublicUrl(filePath);
@@ -160,7 +156,7 @@ export function RubricDetailPage() {
     try {
       const { data, error } = await supabaseClient.storage
         .from('Scorify_rubrics')
-        .createSignedUrl(filePath, 60); // short lived for download
+        .createSignedUrl(filePath, 60);
       
       if (error) throw error;
       window.open(data.signedUrl, '_blank');

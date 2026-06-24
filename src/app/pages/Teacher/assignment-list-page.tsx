@@ -14,8 +14,7 @@ import {
   FolderOpen,
   Loader2,
   Calendar,
-  FileText,
-  ExternalLink
+  FileText
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -30,7 +29,7 @@ import { toast } from "sonner";
 import { supabaseClient } from "@/app/services/supabaseClient";
 import { useAuth } from "@/app/context/AuthContext";
 
-export function RubricListPage() {
+export function AssignmentListPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [exams, setExams] = useState<any[]>([]);
@@ -60,7 +59,7 @@ export function RubricListPage() {
 
   useEffect(() => {
     fetchExams();
-  }, [user]);
+  }, [user?.id]);
 
   // Handle Duplicate Feature for Exam
   const handleDuplicate = async (targetExam: any) => {
