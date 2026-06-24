@@ -11,8 +11,7 @@ import {
   Loader2,
   Check,
   ChevronsUpDown,
-  Search,
-  ExternalLink
+  Search
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -27,7 +26,7 @@ import { toast } from "sonner";
 import { supabaseClient } from "@/app/services/supabaseClient";
 import { useAuth } from "@/app/context/AuthContext";
 
-export function CreateRubricPage() {
+export function CreateExamPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, profile, loading: authLoading } = useAuth();
@@ -156,8 +155,6 @@ export function CreateRubricPage() {
   };
 
   const toggleClass = (classId: string) => {
-    // In edit mode, we might want to restrict to single class update or allow moving
-    // For now, let's allow changing the class
     setSelectedClasses(prev => 
       prev.includes(classId) 
         ? prev.filter(id => id !== classId) 
@@ -212,14 +209,13 @@ export function CreateRubricPage() {
           .from('exam')
           .update({
             exam_name: title,
-            class_id: selectedClasses[0], // Update to the first selected class if multiple were chosen
+            class_id: selectedClasses[0],
             description: description,
           })
           .eq('exam_id', id);
 
         if (updateError) throw updateError;
         
-        // If user selected MORE classes in edit mode, create new rows for them
         const additionalClasses = selectedClasses.slice(1);
         if (additionalClasses.length > 0) {
           const extraData = additionalClasses.map(classId => ({
